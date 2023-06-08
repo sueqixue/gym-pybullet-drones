@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gym-pybullet-drones"
-version = "0.0.3"
+version = "1.0.0"
 description = "PyBullet Gym environments for single and multi-agent reinforcement learning of quadcopter control"
 authors = ["Jacopo Panerati <jacopo.panerati@utoronto.ca>"]
 license = "MIT"
@@ -27,5 +27,5 @@ tensorboard = "^2.9"
 [tool.poetry.dev-dependencies]
 
 [build-system]
-requires = ["poetry-core @ git+https://github.com/python-poetry/poetry-core.git@master"]
+requires = ["poetry-core @ git+https://github.com/python-poetry/poetry-core.git@main"]
 build-backend = "poetry.core.masonry.api"
