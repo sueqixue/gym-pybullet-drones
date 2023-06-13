@@ -64,20 +64,26 @@ def run(
 
     #### Initialize a vertical trajectory ######################
     PERIOD = 8
-    HOVER_H = 0.15*3
+    HOVER_PAR = 0.15*3
+    HOVER_H = 1
     NUM_WP = control_freq_hz*PERIOD
     TARGET_POS = np.zeros((NUM_WP,3))
     HOVER_FLAG = False
+    groundeffect_hover = False
+    GD_HOVER = False # hover with ground effect
 
     for i in range(NUM_WP):
         # TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + 0.15 * (np.sin((i/NUM_WP)*(2*np.pi)) + 1)
-        if not HOVER_FLAG:
-            TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + HOVER_H * (np.sin((i/NUM_WP)*(2*np.pi)) + 1)
-        else:
-            TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], TARGET_POS[i-1, 2]
+        if GD_HOVER:
+            if not HOVER_FLAG:
+                TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + HOVER_PAR * (np.sin((i/NUM_WP)*(2*np.pi)) + 1)
+            else:
+                TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], TARGET_POS[i-1, 2]
 
-        if TARGET_POS[i, 2] < TARGET_POS[i-1, 2]:
-            HOVER_FLAG = True
+            if TARGET_POS[i, 2] < TARGET_POS[i-1, 2]:
+                HOVER_FLAG = True
+        else:
+            TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + i * (HOVER_H/NUM_WP)
 
         # print(f"TARGET_POS[{i}, :] = {TARGET_POS[i, :]}")
     wp_counter = 0
