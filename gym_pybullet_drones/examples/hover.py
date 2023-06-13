@@ -64,7 +64,7 @@ def run(
 
     #### Initialize a vertical trajectory ######################
     PERIOD = 8
-    HOVER_H = 0.15
+    HOVER_H = 0.15*3
     NUM_WP = control_freq_hz*PERIOD
     TARGET_POS = np.zeros((NUM_WP,3))
     HOVER_FLAG = False
