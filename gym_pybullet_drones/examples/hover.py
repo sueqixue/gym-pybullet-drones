@@ -32,6 +32,8 @@ from gym_pybullet_drones.control.SimplePIDControl import SimplePIDControl
 from gym_pybullet_drones.utils.Logger import Logger
 from gym_pybullet_drones.utils.utils import sync, str2bool
 
+
+
 DEFAULT_DRONES = DroneModel("cf2x")
 DEFAULT_NUM_DRONES = 1
 DEFAULT_PHYSICS = Physics.PYB_GND ## or Physics.PYB for comparision
@@ -62,7 +64,8 @@ def run(
         control_freq_hz=DEFAULT_CONTROL_FREQ_HZ,
         duration_sec=DEFAULT_DURATION_SEC,
         output_folder=DEFAULT_OUTPUT_FOLDER,
-        colab=DEFAULT_COLAB
+        colab=DEFAULT_COLAB,
+        ground_effect=DEFAULT_GD
         ):
 
     #### Initialize the simulation #############################
@@ -76,8 +79,12 @@ def run(
     NUM_WP = control_freq_hz*PERIOD
     TARGET_POS = np.zeros((NUM_WP,3))
     HOVER_FLAG = False
-    groundeffect_hover = False
-    GD_HOVER = DEFAULT_GD
+    GD_HOVER = ground_effect
+
+    if GD_HOVER:
+        print(f"---------- HOVER WITH GROUND EFFECT ----------\n")
+    else:
+        print(f"---------- HOVER WITHOUT GROUND EFFECT ----------\n")
 
     for i in range(NUM_WP):
         # TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + 0.15 * (np.sin((i/NUM_WP)*(2*np.pi)) + 1)
@@ -186,7 +193,10 @@ if __name__ == "__main__":
     parser.add_argument('--duration_sec',       default=DEFAULT_DURATION_SEC,       type=int,           help='Duration of the simulation in seconds (default: 5)', metavar='')
     parser.add_argument('--output_folder',      default=DEFAULT_OUTPUT_FOLDER,      type=str,           help='Folder where to save logs (default: "results")', metavar='')
     parser.add_argument('--colab',              default=DEFAULT_COLAB,              type=bool,          help='Whether example is being run by a notebook (default: "False")', metavar='')
-    parser.add_argument('--ground_effect',      default=DEFAULT_GD,                 type=bool,          help='Whether hover with ground effect or not (default: "False")', metavar='')
+    #parser.add_argument('--ground_effect',      default=DEFAULT_GD,                 type=bool,          help='Whether hover with ground effect or not (default: "False")', metavar='')
+    parser.add_argument('--ground_effect',      dest='ground_effect',       action='store_true')
+    parser.add_argument('--no_ground_effect',   dest='ground_effect',       action='store_false')
+    parser.set_defaults(ground_effect=False)
     ARGS = parser.parse_args()
 
     run(**vars(ARGS))
