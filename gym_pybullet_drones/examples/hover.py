@@ -32,6 +32,9 @@ from gym_pybullet_drones.control.SimplePIDControl import SimplePIDControl
 from gym_pybullet_drones.utils.Logger import Logger
 from gym_pybullet_drones.utils.utils import sync, str2bool
 
+DEFAULT_DRONES = DroneModel("cf2x")
+DEFAULT_NUM_DRONES = 1
+DEFAULT_PHYSICS = Physics.PYB_GND ## or Physics.PYB for comparision
 DEFAULT_GUI = True
 DEFAULT_RECORD_VIDEO = False
 DEFAULT_PLOT = True
@@ -43,8 +46,12 @@ DEFAULT_CONTROL_FREQ_HZ = 240
 DEFAULT_DURATION_SEC = 8
 DEFAULT_OUTPUT_FOLDER = 'results'
 DEFAULT_COLAB = False
+DEFAULT_GD = False
 
 def run(
+        drone=DEFAULT_DRONES,
+        num_drones=DEFAULT_NUM_DRONES,
+        physics=DEFAULT_PHYSICS,
         gui=DEFAULT_GUI,
         record_video=DEFAULT_RECORD_VIDEO,
         plot=DEFAULT_PLOT,
@@ -70,7 +77,7 @@ def run(
     TARGET_POS = np.zeros((NUM_WP,3))
     HOVER_FLAG = False
     groundeffect_hover = False
-    GD_HOVER = False # hover with ground effect
+    GD_HOVER = DEFAULT_GD
 
     for i in range(NUM_WP):
         # TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + 0.15 * (np.sin((i/NUM_WP)*(2*np.pi)) + 1)
@@ -89,11 +96,10 @@ def run(
     wp_counter = 0
 
     #### Create the environment ################################
-    env = CtrlAviary(drone_model=DroneModel.CF2X,
-                     num_drones=1,
+    env = CtrlAviary(drone_model=drone,
+                     num_drones=num_drones,
                      initial_xyzs=INIT_XYZ,
-                     physics=Physics.PYB_GND,
-                     # physics=Physics.PYB, # For comparison
+                     physics=physics,
                      neighbourhood_radius=10,
                      freq=simulation_freq_hz,
                      aggregate_phy_steps=AGGR_PHY_STEPS,
@@ -108,13 +114,13 @@ def run(
 
     #### Initialize the logger #################################
     logger = Logger(logging_freq_hz=int(simulation_freq_hz/AGGR_PHY_STEPS),
-                    num_drones=1,
+                    num_drones=num_drones,
                     output_folder=output_folder,
                     colab=colab
                     )
 
     #### Initialize the controller #############################
-    ctrl = DSLPIDControl(drone_model=DroneModel.CF2X)
+    ctrl = DSLPIDControl(drone_model=drone)
 
     #### Run the simulation ####################################
     CTRL_EVERY_N_STEPS = int(np.floor(env.SIM_FREQ/control_freq_hz))
@@ -165,18 +171,22 @@ def run(
 
 if __name__ == "__main__":
     #### Define and parse (optional) arguments for the script ##
-    parser = argparse.ArgumentParser(description='Ground effect script using CtrlAviary and DSLPIDControl')
-    parser.add_argument('--gui',                default=DEFAULT_GUI,       type=str2bool,      help='Whether to use PyBullet GUI (default: True)', metavar='')
-    parser.add_argument('--record_video',       default=DEFAULT_RECORD_VIDEO,      type=str2bool,      help='Whether to record a video (default: False)', metavar='')
-    parser.add_argument('--plot',               default=DEFAULT_PLOT,       type=str2bool,      help='Whether to plot the simulation results (default: True)', metavar='')
-    parser.add_argument('--user_debug_gui',     default=DEFAULT_USER_DEBUG_GUI,      type=str2bool,      help='Whether to add debug lines and parameters to the GUI (default: False)', metavar='')
-    parser.add_argument('--aggregate',          default=DEFAULT_AGGREGATE,       type=str2bool,      help='Whether to aggregate physics steps (default: False)', metavar='')
-    parser.add_argument('--obstacles',          default=DEFAULT_OBSTACLES,       type=str2bool,      help='Whether to add obstacles to the environment (default: True)', metavar='')
-    parser.add_argument('--simulation_freq_hz', default=DEFAULT_SIMULATION_FREQ_HZ,        type=int,           help='Simulation frequency in Hz (default: 240)', metavar='')
-    parser.add_argument('--control_freq_hz',    default=DEFAULT_CONTROL_FREQ_HZ,        type=int,           help='Control frequency in Hz (default: 48)', metavar='')
-    parser.add_argument('--duration_sec',       default=DEFAULT_DURATION_SEC,          type=int,           help='Duration of the simulation in seconds (default: 5)', metavar='')
-    parser.add_argument('--output_folder',     default=DEFAULT_OUTPUT_FOLDER, type=str,           help='Folder where to save logs (default: "results")', metavar='')
-    parser.add_argument('--colab',              default=DEFAULT_COLAB, type=bool,           help='Whether example is being run by a notebook (default: "False")', metavar='')
+    parser = argparse.ArgumentParser(description='Hover script with or without ground effect using CtrlAviary and DSLPIDControl')
+    parser.add_argument('--drone',              default=DEFAULT_DRONES,             type=DroneModel,    help='Drone model (default: CF2X)', metavar='', choices=DroneModel)
+    parser.add_argument('--num_drones',         default=DEFAULT_NUM_DRONES,         type=int,           help='Number of drones (default: 3)', metavar='')
+    parser.add_argument('--physics',            default=DEFAULT_PHYSICS,            type=Physics,       help='Physics updates (default: PYB)', metavar='', choices=Physics)
+    parser.add_argument('--gui',                default=DEFAULT_GUI,                type=str2bool,      help='Whether to use PyBullet GUI (default: True)', metavar='')
+    parser.add_argument('--record_video',       default=DEFAULT_RECORD_VIDEO,       type=str2bool,      help='Whether to record a video (default: False)', metavar='')
+    parser.add_argument('--plot',               default=DEFAULT_PLOT,               type=str2bool,      help='Whether to plot the simulation results (default: True)', metavar='')
+    parser.add_argument('--user_debug_gui',     default=DEFAULT_USER_DEBUG_GUI,     type=str2bool,      help='Whether to add debug lines and parameters to the GUI (default: False)', metavar='')
+    parser.add_argument('--aggregate',          default=DEFAULT_AGGREGATE,          type=str2bool,      help='Whether to aggregate physics steps (default: False)', metavar='')
+    parser.add_argument('--obstacles',          default=DEFAULT_OBSTACLES,          type=str2bool,      help='Whether to add obstacles to the environment (default: True)', metavar='')
+    parser.add_argument('--simulation_freq_hz', default=DEFAULT_SIMULATION_FREQ_HZ, type=int,           help='Simulation frequency in Hz (default: 240)', metavar='')
+    parser.add_argument('--control_freq_hz',    default=DEFAULT_CONTROL_FREQ_HZ,    type=int,           help='Control frequency in Hz (default: 48)', metavar='')
+    parser.add_argument('--duration_sec',       default=DEFAULT_DURATION_SEC,       type=int,           help='Duration of the simulation in seconds (default: 5)', metavar='')
+    parser.add_argument('--output_folder',      default=DEFAULT_OUTPUT_FOLDER,      type=str,           help='Folder where to save logs (default: "results")', metavar='')
+    parser.add_argument('--colab',              default=DEFAULT_COLAB,              type=bool,          help='Whether example is being run by a notebook (default: "False")', metavar='')
+    parser.add_argument('--ground_effect',      default=DEFAULT_GD,                 type=bool,          help='Whether hover with ground effect or not (default: "False")', metavar='')
     ARGS = parser.parse_args()
 
     run(**vars(ARGS))
