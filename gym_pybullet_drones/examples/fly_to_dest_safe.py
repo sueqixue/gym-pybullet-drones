@@ -24,16 +24,17 @@ import random
 import numpy as np
 import pybullet as p
 import matplotlib.pyplot as plt
+from copy import deepcopy
+from rrt_drones import *
 
 from gym_pybullet_drones.utils.enums import DroneModel, Physics
 from gym_pybullet_drones.envs.CtrlAviary import CtrlAviary
+from gym_pybullet_drones.envs.FLabCtrlAviary import FLabCtrlAviary
 from gym_pybullet_drones.envs.VisionAviary import VisionAviary
 from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
 from gym_pybullet_drones.control.SimplePIDControl import SimplePIDControl
 from gym_pybullet_drones.utils.Logger import Logger
 from gym_pybullet_drones.utils.utils import sync, str2bool
-
-
 
 DEFAULT_DRONES = DroneModel("cf2x")
 DEFAULT_NUM_DRONES = 1
@@ -43,13 +44,26 @@ DEFAULT_RECORD_VIDEO = False
 DEFAULT_PLOT = True
 DEFAULT_USER_DEBUG_GUI = False
 DEFAULT_AGGREGATE = True
-DEFAULT_OBSTACLES = False
+DEFAULT_OBSTACLES = True
 DEFAULT_SIMULATION_FREQ_HZ = 240
 DEFAULT_CONTROL_FREQ_HZ = 240
-DEFAULT_DURATION_SEC = 8
+DEFAULT_DURATION_SEC = 20
 DEFAULT_OUTPUT_FOLDER = 'results'
 DEFAULT_COLAB = False
 DEFAULT_GD = False
+
+""" Collision avoidance algorithms
+    none - dummy trajectory
+    rrt - rrt algorithm
+    pp - potential field
+"""
+DUMMY = 'none'
+RRT = 'rrt'
+PP = 'pp'
+DEFAULT_COLLISION_AVOIDANCE = DUMMY
+
+# Debug boolens
+PRINTING = False
 
 def run(
         drone=DEFAULT_DRONES,
@@ -66,7 +80,8 @@ def run(
         duration_sec=DEFAULT_DURATION_SEC,
         output_folder=DEFAULT_OUTPUT_FOLDER,
         colab=DEFAULT_COLAB,
-        ground_effect=DEFAULT_GD
+        ground_effect=DEFAULT_GD,
+        collision_avoidance=DEFAULT_COLLISION_AVOIDANCE
         ):
 
     #### Initialize the simulation #############################
@@ -74,44 +89,6 @@ def run(
     HOVER_XYZ = np.array([0, 0, 1]).reshape(1,3)
     DEST_XYZ = np.array([1, 1, 1]).reshape(1,3)
     AGGR_PHY_STEPS = int(simulation_freq_hz/control_freq_hz) if aggregate else 1
-
-    #### Initialize a vertical trajectory ######################
-    PERIOD = 8
-    HOVER_PAR = 0.15*3
-    HOVER_H = 1
-    NUM_WP = control_freq_hz*PERIOD
-    TARGET_POS = np.zeros((NUM_WP,3))
-    HOVER_FLAG = False
-    GD_HOVER = ground_effect
-
-    if GD_HOVER:
-        print(f"---------- TAKE OFF WITH GROUND EFFECT ----------\n")
-    else:
-        print(f"---------- TAKE OFF WITHOUT GROUND EFFECT ----------\n")
-
-    for i in range(NUM_WP):
-    """
-    TODO: taking off the drone to the hover xyz and move to the dest position.
-        Note that TARGET_POS is an array contains the position at each sampling
-        point, which means it contains the infomation of the desired trajectory/
-        path of the current task. So when implementing any collision avoidance
-        algorithms/controller, use the input src and dest position to find the
-        optimal trajectory/path.
-    """
-        # TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + 0.15 * (np.sin((i/NUM_WP)*(2*np.pi)) + 1)
-        if GD_HOVER:
-            if not HOVER_FLAG:
-                TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + HOVER_PAR * (np.sin((i/NUM_WP)*(2*np.pi)) + 1)
-            else:
-                TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], TARGET_POS[i-1, 2]
-
-            if TARGET_POS[i, 2] < TARGET_POS[i-1, 2]:
-                HOVER_FLAG = True
-        else:
-            TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + i * (HOVER_H/NUM_WP)
-
-        # print(f"TARGET_POS[{i}, :] = {TARGET_POS[i, :]}")
-    wp_counter = 0
 
     #### Create the environment ################################
     env = CtrlAviary(drone_model=drone,
@@ -139,6 +116,82 @@ def run(
 
     #### Initialize the controller #############################
     ctrl = DSLPIDControl(drone_model=drone)
+
+    #### Initialize a desired trajectory ######################
+    """
+    TODO: taking off the drone to the hover xyz and move to the dest position.
+        Note that TARGET_POS is an array contains the position at each sampling
+        point, which means it contains the infomation of the desired trajectory/
+        path of the current task. So when implementing any collision avoidance
+        algorithms/controller, use the input src and dest position to find the
+        optimal trajectory/path.
+    """
+    HOVER_PAR = 0.15*3
+    HOVER_H = 1
+    HOVER_FLAG = False
+    GD_HOVER = ground_effect
+
+    TAKEOFF_PERIOD = 8
+    TASK_PERIOD = 12
+    NUM_WP_TAKEOFF = control_freq_hz*TAKEOFF_PERIOD
+    NUM_WP_TASK = control_freq_hz*TASK_PERIOD
+    NUM_WP = NUM_WP_TAKEOFF + NUM_WP_TASK
+
+    TARGET_POS = np.zeros((NUM_WP,3))
+    
+    if GD_HOVER:
+        print(f"\n---------- TAKE OFF WITH GROUND EFFECT ----------\n")
+    else:
+        print(f"\n---------- TAKE OFF WITHOUT GROUND EFFECT ----------\n")
+
+    # Take off
+    for i in range(NUM_WP_TAKEOFF):
+        if GD_HOVER:
+            if not HOVER_FLAG:
+                TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + HOVER_PAR * (np.sin((i/NUM_WP_TAKEOFF)*(2*np.pi)) + 1)
+            else:
+                TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], TARGET_POS[i-1, 2]
+
+            if TARGET_POS[i, 2] < TARGET_POS[i-1, 2]:
+                HOVER_FLAG = True
+        else:
+            TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + i * (HOVER_H/NUM_WP_TAKEOFF)
+        
+        if PRINTING:
+            print(f"TARGET_POS[{i}, :] = {TARGET_POS[i, :]}")
+   
+    # Finding the path to the destination with RRT
+    task_start = TARGET_POS[NUM_WP_TAKEOFF-1, :]
+    task_goal = np.array([1, -1, 1.2]).reshape(1,3)
+    task_path = rrt(deepcopy(env), deepcopy(task_start), deepcopy(task_goal))
+    
+    if PRINTING:
+            print(f"RRT path length = {len(task_path)}")
+
+    if GD_HOVER:
+        print(f"\n---------- FLY TO DESTINATION WITH GROUND EFFECT ----------\n")
+    else:
+        print(f"\n---------- FLY TO DESTINATION WITHOUT GROUND EFFECT ----------\n")
+
+    if collision_avoidance == 'none':
+        # [DEBUG]: Generating the path to the destination without collision avoidance
+        for i in range(NUM_WP_TASK):
+            TARGET_POS[i+NUM_WP_TAKEOFF, :] = TARGET_POS[NUM_WP_TAKEOFF-1, 0] + i * (HOVER_H/NUM_WP_TASK), TARGET_POS[NUM_WP_TAKEOFF-1, 1], TARGET_POS[NUM_WP_TAKEOFF-1, 2]
+            if PRINTING:
+                print(f"TARGET_POS[{i+NUM_WP_TAKEOFF}, :] = {TARGET_POS[i+NUM_WP_TAKEOFF, :]}")
+    else:
+        for i in range(NUM_WP_TASK):
+            if i < len(task_path):
+                TARGET_POS[i+NUM_WP_TAKEOFF, :] = task_path[i]
+            elif len(task_path) > 0:
+                TARGET_POS[i+NUM_WP_TAKEOFF, :] = task_path[-1]
+            else:
+                TARGET_POS[i+NUM_WP_TAKEOFF, :] = TARGET_POS[NUM_WP_TAKEOFF-1, :]
+
+            if PRINTING:
+                print(f"TASK_POS[{i}, :] = TARGET_POS[{i+NUM_WP_TAKEOFF}, :] = {TARGET_POS[i+NUM_WP_TAKEOFF, :]}")
+    
+    wp_counter = 0
 
     #### Run the simulation ####################################
     CTRL_EVERY_N_STEPS = int(np.floor(env.SIM_FREQ/control_freq_hz))
@@ -207,6 +260,7 @@ if __name__ == "__main__":
     parser.add_argument('--ground_effect',      dest='ground_effect',       action='store_true')
     parser.add_argument('--no_ground_effect',   dest='ground_effect',       action='store_false')
     parser.set_defaults(ground_effect=False)
+    parser.add_argument('--collision_avoidance',default=DEFAULT_COLLISION_AVOIDANCE,type=str,           help='Which collision avoidance algorithm to apply (default: "none")', metavar='')
     ARGS = parser.parse_args()
 
     run(**vars(ARGS))
