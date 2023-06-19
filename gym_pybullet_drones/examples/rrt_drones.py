@@ -14,6 +14,8 @@ def isWithinLimit(pos, lowerLim, upperLim):
 ################################################################################
 
 def isCollided(q, obstacles):
+    # TODO: find how to extract the obstacles data from the env struct, and check
+    #       how the data is stored. Then implement the isCollided().
     return True
 
 ################################################################################
@@ -46,10 +48,13 @@ def getClosestNode(q, nodeList):
 def rrt(env, start, goal):
     """
     RRT algorithm
-    :param map:
-    :param start:
-    :param goal:
-    :return:
+    :param env:         the environment struct
+    :param start:       start position of the drone (0x3)
+    :param goal:        goal position of the drone (0x3)
+    :return:            return an mx3 matrix, where each row contain the target
+                        position of the drone in the path. The first row is start
+                        and the last row is goal. If no path is found, return
+                        empty PATH.
     """
 
     # Initialize the path
