@@ -52,30 +52,34 @@ def rrt(env, start, goal):
     :return:
     """
 
-    # initialize the path
+    # Initialize the path
     path = []
     path_start = []
     path_goal = []
 
-    # drone workspace limits
+    # Drone workspace limits
     n_iter = 500
-    upperLim = np.array([0, 0, 2]).reshape(1,3)    # ceiling height - maybe camera height
-    lowerLim = np.array([0, 0, 0.2]).reshape(1,3)  # lower limit to avoid ground effect
+    upperLim = np.array([0, 0, 2]).reshape(1,3)    # Ceiling height - maybe camera height
+    lowerLim = np.array([0, 0, 0.2]).reshape(1,3)  # Lower limit to avoid ground effect
 
-    # check if the start and goal is within the limits
+    # Check if the start and goal is within the limits
     check_start = not isWithinLimit(start, lowerLim, upperLim)
     check_goal = not isWithinLimit(goal, lowerLim, upperLim)  
     if check_start or check_goal:
         return path
 
-    # initialize the nodelist for start and goal
+    # Loading the obstacles
+    obstacles = env.obstacles
+
+    # Check if there is any obstacles at the start and goal positions
+    if isCollision(start) or isCollision(goal):
+        return path
+
+    # Initialize the nodelist for start and goal
     T_start = [Node(start)]
     T_goal = [Node(goal)]
 
-    # loading the obstacles
-    obstacles = env.obstacles
-
-    # finding the path
+    # Finding the path
     for i in range(n_iter):
         q = randomFreePos(lowerLim, upperLim, obstacles)    # Random configuration in Q_free
 

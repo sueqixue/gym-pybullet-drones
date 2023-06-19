@@ -1,11 +1,12 @@
 import numpy as np
+import pybullet as p
 from gym import spaces
 
 from gym_pybullet_drones.envs.BaseAviary import BaseAviary
 from gym_pybullet_drones.utils.enums import DroneModel, Physics
 
 class FLabCtrlAviary(BaseAviary):
-    """Multi-drone environment class for control applications."""
+    """Multi-drone environment class for control applications with Figueroa Lab enviroment"""
 
     ################################################################################
 

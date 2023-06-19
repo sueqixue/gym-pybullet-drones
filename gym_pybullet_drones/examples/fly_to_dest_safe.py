@@ -1,17 +1,15 @@
-"""Script demonstrating the ground effect contribution.
-
-The simulation is run by a `CtrlAviary` environment.
+"""The simulation is run by a `FLabCtrlAviary` environment.
 
 Example
 -------
 In a terminal, run as:
 
-    $ python hover.py
+    $ python fly_to_dest_safe.py
 
 Notes
 -----
 Let the drone take off and fly from a src position to a dest position.
-Use to test different controllers.
+Use to test different collision avoidance algorithms.
 
 """
 import os
@@ -91,7 +89,7 @@ def run(
     AGGR_PHY_STEPS = int(simulation_freq_hz/control_freq_hz) if aggregate else 1
 
     #### Create the environment ################################
-    env = CtrlAviary(drone_model=drone,
+    env = FLabCtrlAviary(drone_model=drone,
                      num_drones=num_drones,
                      initial_xyzs=INIT_XYZ,
                      physics=physics,
@@ -242,7 +240,7 @@ def run(
 
 if __name__ == "__main__":
     #### Define and parse (optional) arguments for the script ##
-    parser = argparse.ArgumentParser(description='Hover script with or without ground effect using CtrlAviary and DSLPIDControl')
+    parser = argparse.ArgumentParser(description='Hover script with or without ground effect using FLabCtrlAviary and DSLPIDControl')
     parser.add_argument('--drone',              default=DEFAULT_DRONES,             type=DroneModel,    help='Drone model (default: CF2X)', metavar='', choices=DroneModel)
     parser.add_argument('--num_drones',         default=DEFAULT_NUM_DRONES,         type=int,           help='Number of drones (default: 3)', metavar='')
     parser.add_argument('--physics',            default=DEFAULT_PHYSICS,            type=Physics,       help='Physics updates (default: PYB)', metavar='', choices=Physics)
