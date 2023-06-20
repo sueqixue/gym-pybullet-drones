@@ -54,7 +54,7 @@ class FLabCtrlAviary(BaseAviary):
         user_debug_gui : bool, optional
             Whether to draw the drones' axes and the GUI RPMs sliders.
 
-        """
+        """           
         super().__init__(drone_model=drone_model,
                          num_drones=num_drones,
                          neighbourhood_radius=neighbourhood_radius,
@@ -65,10 +65,14 @@ class FLabCtrlAviary(BaseAviary):
                          aggregate_phy_steps=aggregate_phy_steps,
                          gui=gui,
                          record=record,
-                         obstacles=obstacles,
+                         obstacles=False,
                          user_debug_gui=user_debug_gui,
                          output_folder=output_folder
                          )
+
+        self.obstacles_list = []
+        if obstacles:
+            self.obstacles_list = self._addObstacles()
 
     ################################################################################
 
@@ -78,24 +82,33 @@ class FLabCtrlAviary(BaseAviary):
         These obstacles are loaded from standard URDF files included in Bullet.
 
         """
-        p.loadURDF("samurai.urdf",
+        samurai_id = p.loadURDF("samurai.urdf",
                    physicsClientId=self.CLIENT
                    )
-        p.loadURDF("duck_vhacd.urdf",
+        duck_id = p.loadURDF("duck_vhacd.urdf",
                    [-.5, -.5, .05],
                    p.getQuaternionFromEuler([0, 0, 0]),
                    physicsClientId=self.CLIENT
                    )
-        p.loadURDF("cube_no_rotation.urdf",
+        cube_id = p.loadURDF("cube_no_rotation.urdf",
                    [-.5, -2.5, .5],
                    p.getQuaternionFromEuler([0, 0, 0]),
                    physicsClientId=self.CLIENT
                    )
-        p.loadURDF("sphere2.urdf",
+        sphere2_id = p.loadURDF("sphere2.urdf",
                    [0, 2, .5],
-                   p.getQuaternionFromEuler([0,0,0]),
+                   p.getQuaternionFromEuler([0, 0, 0]),
                    physicsClientId=self.CLIENT
                    )
+        
+        obstacles = [
+            samurai_id,
+            duck_id,
+            cube_id,
+            sphere2_id,
+        ]
+
+        return obstacles
     
     ################################################################################
 

@@ -159,7 +159,7 @@ def run(
             print(f"TARGET_POS[{i}, :] = {TARGET_POS[i, :]}")
    
     # Finding the path to the destination with RRT
-    task_start = TARGET_POS[NUM_WP_TAKEOFF-1, :]
+    task_start = TARGET_POS[NUM_WP_TAKEOFF-1, :].reshape(1,3)
     task_goal = np.array([1, -1, 1.2]).reshape(1,3)
     task_path = rrt(deepcopy(env), deepcopy(task_start), deepcopy(task_goal))
     
@@ -173,11 +173,13 @@ def run(
 
     if collision_avoidance == 'none':
         # [DEBUG]: Generating the path to the destination without collision avoidance
+        print(f"\n---------- DEBUG TRAJ ----------\n")
         for i in range(NUM_WP_TASK):
             TARGET_POS[i+NUM_WP_TAKEOFF, :] = TARGET_POS[NUM_WP_TAKEOFF-1, 0] + i * (HOVER_H/NUM_WP_TASK), TARGET_POS[NUM_WP_TAKEOFF-1, 1], TARGET_POS[NUM_WP_TAKEOFF-1, 2]
             if PRINTING:
                 print(f"TARGET_POS[{i+NUM_WP_TAKEOFF}, :] = {TARGET_POS[i+NUM_WP_TAKEOFF, :]}")
-    else:
+    elif collision_avoidance == 'rrt':
+        print(f"\n---------- RRT ----------\n")
         for i in range(NUM_WP_TASK):
             if i < len(task_path):
                 TARGET_POS[i+NUM_WP_TAKEOFF, :] = task_path[i]

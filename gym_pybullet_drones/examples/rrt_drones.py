@@ -1,6 +1,9 @@
 import numpy as np
 import random
 
+# Debug boolens
+PRINTING = True
+
 class Node:
     def __init__(self, q, parentIdx=None):
         self.q = q
@@ -13,17 +16,25 @@ def isWithinLimit(pos, lowerLim, upperLim):
 
 ################################################################################
 
-def isCollided(q, obstacles):
-    # TODO: find how to extract the obstacles data from the env struct, and check
-    #       how the data is stored. Then implement the isCollided().
-    return True
+def isPosCollided(q, obstacles):
+
+    return False
+
+################################################################################
+
+def isPathCollided(q_end, q_start, obstacles, num_steps=20):
+    step = (q_end - q_start) / num_steps
+    for i in range(1, 1 + num_steps):
+        if isPosCollided(q_start + (i * step), obstacles):
+            return True
+    return False
 
 ################################################################################
 
 def randomFreePos(lowerLim, upperLim, obstacles):
     while True:
         q_random = np.random.uniform(lowerLim, upperLim)
-        if not isCollided(q_random, obstacles):
+        if not isPosCollided(q_random, obstacles):
             break
 
     return q_random
@@ -64,8 +75,11 @@ def rrt(env, start, goal):
 
     # Drone workspace limits
     n_iter = 500
-    upperLim = np.array([0, 0, 2]).reshape(1,3)    # Ceiling height - maybe camera height
-    lowerLim = np.array([0, 0, 0.2]).reshape(1,3)  # Lower limit to avoid ground effect
+    upperLim = np.array([5, 5, 2]).reshape(1,3)    # Ceiling height - maybe camera height
+    lowerLim = np.array([-5, -5, 0.2]).reshape(1,3)  # Lower limit to avoid ground effect
+
+    if PRINTING:
+        print(f"--------------------\nstart = {start}\ngoal = {goal}\n--------------------")
 
     # Check if the start and goal is within the limits
     check_start = not isWithinLimit(start, lowerLim, upperLim)
@@ -74,10 +88,14 @@ def rrt(env, start, goal):
         return path
 
     # Loading the obstacles
-    obstacles = env.obstacles
+    obstacles = env.obstacles_list
+    if PRINTING:
+        print(f"There is {len(obstacles)} obstacles in the environment.\n--------------------")
+        for j in range(len(obstacles)):
+            print(f"obstacles_{j} = {obstacles[j]}\n")
 
     # Check if there is any obstacles at the start and goal positions
-    if isCollision(start) or isCollision(goal):
+    if isPosCollided(start, obstacles) or isPosCollided(goal, obstacles):
         return path
 
     # Initialize the nodelist for start and goal
@@ -90,14 +108,14 @@ def rrt(env, start, goal):
 
         idx_q_a = getClosestNode(q, T_start)                # Get closest node in T_start
         q_a = T_start[idx_q_a].q                            # Get point q_a
-        q_a_flag = isCollided(q_a, q, obstacles)            # Check if edge qq_a collide with obstacles
+        q_a_flag = isPathCollided(q_a, q, obstacles)            # Check if edge qq_a collide with obstacles
 
         if not q_a_flag:                                    # Add (q, q_a) to T_start
             T_start.append(Node(q, idx_q_a))
 
         idx_q_b = getClosestNode(q, T_goal)                 # Get closest node in T_gaol
         q_b = T_goal[idx_q_b].q                             # Get point q_b
-        q_b_flag = isCollided(q_b, q, obstacles)            # Check if edge qq_b collide with obstacles
+        q_b_flag = isPathCollided(q_b, q, obstacles)            # Check if edge qq_b collide with obstacles
 
         if not q_b_flag:                                    # Add (q_b, q) to T_goal
             T_goal.append(Node(q, idx_q_b))
@@ -121,6 +139,9 @@ def rrt(env, start, goal):
 
             # Get the path
             path = np.array(path_start[::-1] + path_goal[1:])
+
+            if PRINTING:
+                print(f"path = {path}")
             return path
 
     return []
