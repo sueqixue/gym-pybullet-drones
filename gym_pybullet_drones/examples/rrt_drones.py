@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 # Debug boolens
-PRINTING = True
+PRINTING = False
 
 class Node:
     def __init__(self, q, parentIdx=None):
@@ -16,13 +16,21 @@ def isWithinLimit(pos, lowerLim, upperLim):
 
 ################################################################################
 
-def isPosCollided(q, obstacles):
+def isPosCollided(q, obstacles, safe_dist=0.1):
+    for obstacle in obstacles:
+        obstacle_pos = obstacle[0]
+        dist = np.linalg.norm(q - obstacle_pos)
 
+        if PRINTING:
+            print(f"dist = {dist} and safe_dist = {safe_dist}")
+            
+        if dist < safe_dist:
+            return True
     return False
 
 ################################################################################
 
-def isPathCollided(q_end, q_start, obstacles, num_steps=20):
+def isPathCollided(q_end, q_start, obstacles, num_steps=500):
     step = (q_end - q_start) / num_steps
     for i in range(1, 1 + num_steps):
         if isPosCollided(q_start + (i * step), obstacles):
@@ -56,12 +64,13 @@ def getClosestNode(q, nodeList):
 
 ################################################################################
 
-def rrt(env, start, goal):
+def rrt(env, start, goal, num_iter=500):
     """
     RRT algorithm
     :param env:         the environment struct
     :param start:       start position of the drone (0x3)
     :param goal:        goal position of the drone (0x3)
+    :param n_iter:      number of iteration for finding the path
     :return:            return an mx3 matrix, where each row contain the target
                         position of the drone in the path. The first row is start
                         and the last row is goal. If no path is found, return
@@ -74,7 +83,6 @@ def rrt(env, start, goal):
     path_goal = []
 
     # Drone workspace limits
-    n_iter = 500
     upperLim = np.array([5, 5, 2]).reshape(1,3)    # Ceiling height - maybe camera height
     lowerLim = np.array([-5, -5, 0.2]).reshape(1,3)  # Lower limit to avoid ground effect
 
@@ -101,21 +109,21 @@ def rrt(env, start, goal):
     # Initialize the nodelist for start and goal
     T_start = [Node(start)]
     T_goal = [Node(goal)]
-
+    
     # Finding the path
-    for i in range(n_iter):
+    for i in range(num_iter):
         q = randomFreePos(lowerLim, upperLim, obstacles)    # Random configuration in Q_free
 
         idx_q_a = getClosestNode(q, T_start)                # Get closest node in T_start
         q_a = T_start[idx_q_a].q                            # Get point q_a
-        q_a_flag = isPathCollided(q_a, q, obstacles)            # Check if edge qq_a collide with obstacles
+        q_a_flag = isPathCollided(q_a, q, obstacles)        # Check if edge qq_a collide with obstacles
 
         if not q_a_flag:                                    # Add (q, q_a) to T_start
             T_start.append(Node(q, idx_q_a))
 
         idx_q_b = getClosestNode(q, T_goal)                 # Get closest node in T_gaol
         q_b = T_goal[idx_q_b].q                             # Get point q_b
-        q_b_flag = isPathCollided(q_b, q, obstacles)            # Check if edge qq_b collide with obstacles
+        q_b_flag = isPathCollided(q_b, q, obstacles)        # Check if edge qq_b collide with obstacles
 
         if not q_b_flag:                                    # Add (q_b, q) to T_goal
             T_goal.append(Node(q, idx_q_b))
@@ -139,9 +147,11 @@ def rrt(env, start, goal):
 
             # Get the path
             path = np.array(path_start[::-1] + path_goal[1:])
+            path = path.reshape(path.shape[0], 3)
+            print(f"path = {path}")
 
             if PRINTING:
-                print(f"path = {path}")
+                print(f"path shape = {path.shape}")
             return path
 
     return []

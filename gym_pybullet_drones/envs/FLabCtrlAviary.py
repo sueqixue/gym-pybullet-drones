@@ -95,17 +95,23 @@ class FLabCtrlAviary(BaseAviary):
                    p.getQuaternionFromEuler([0, 0, 0]),
                    physicsClientId=self.CLIENT
                    )
-        sphere2_id = p.loadURDF("sphere2.urdf",
-                   [0, 2, .5],
+        sphere_id = p.loadURDF("sphere2.urdf",
+                   [.7, 0, .5],
                    p.getQuaternionFromEuler([0, 0, 0]),
                    physicsClientId=self.CLIENT
                    )
-        
+    
+        # obstacles = [
+        #     samurai_id,
+        #     duck_id,
+        #     cube_id,
+        #     sphere2_id,
+        # ]
         obstacles = [
-            samurai_id,
-            duck_id,
-            cube_id,
-            sphere2_id,
+            p.getBasePositionAndOrientation(samurai_id),
+            p.getBasePositionAndOrientation(duck_id),
+            p.getBasePositionAndOrientation(cube_id),
+            p.getBasePositionAndOrientation(sphere_id)
         ]
 
         return obstacles

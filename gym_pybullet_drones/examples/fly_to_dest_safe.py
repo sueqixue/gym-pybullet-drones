@@ -45,7 +45,7 @@ DEFAULT_AGGREGATE = True
 DEFAULT_OBSTACLES = True
 DEFAULT_SIMULATION_FREQ_HZ = 240
 DEFAULT_CONTROL_FREQ_HZ = 240
-DEFAULT_DURATION_SEC = 20
+DEFAULT_DURATION_SEC = 24
 DEFAULT_OUTPUT_FOLDER = 'results'
 DEFAULT_COLAB = False
 DEFAULT_GD = False
@@ -58,10 +58,12 @@ DEFAULT_GD = False
 DUMMY = 'none'
 RRT = 'rrt'
 PP = 'pp'
-DEFAULT_COLLISION_AVOIDANCE = DUMMY
+DEFAULT_COLLISION_AVOIDANCE = RRT
 
 # Debug boolens
 PRINTING = False
+RRT_PRINTING = False
+TP_PRINTING = True
 
 def run(
         drone=DEFAULT_DRONES,
@@ -124,49 +126,86 @@ def run(
         algorithms/controller, use the input src and dest position to find the
         optimal trajectory/path.
     """
-    HOVER_PAR = 0.15*3
-    HOVER_H = 1
+    TAKE_OFF_PAR = 0.15*3
+    TAKE_OFF_H = 1
     HOVER_FLAG = False
-    GD_HOVER = ground_effect
+    GROUND_EFFECT = ground_effect
 
     TAKEOFF_PERIOD = 8
     TASK_PERIOD = 12
+    HOVER_PERIOD = 4
     NUM_WP_TAKEOFF = control_freq_hz*TAKEOFF_PERIOD
     NUM_WP_TASK = control_freq_hz*TASK_PERIOD
-    NUM_WP = NUM_WP_TAKEOFF + NUM_WP_TASK
+    NUM_WP_HOVER = control_freq_hz*HOVER_PERIOD
+    NUM_WP = NUM_WP_TAKEOFF + NUM_WP_TASK + NUM_WP_HOVER
 
     TARGET_POS = np.zeros((NUM_WP,3))
     
-    if GD_HOVER:
+    if GROUND_EFFECT:
         print(f"\n---------- TAKE OFF WITH GROUND EFFECT ----------\n")
     else:
         print(f"\n---------- TAKE OFF WITHOUT GROUND EFFECT ----------\n")
 
     # Take off
     for i in range(NUM_WP_TAKEOFF):
-        if GD_HOVER:
+        if GROUND_EFFECT:
             if not HOVER_FLAG:
-                TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + HOVER_PAR * (np.sin((i/NUM_WP_TAKEOFF)*(2*np.pi)) + 1)
+                TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + TAKE_OFF_PAR * (np.sin((i/NUM_WP_TAKEOFF)*(2*np.pi)) + 1)
             else:
                 TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], TARGET_POS[i-1, 2]
 
             if TARGET_POS[i, 2] < TARGET_POS[i-1, 2]:
                 HOVER_FLAG = True
         else:
-            TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + i * (HOVER_H/NUM_WP_TAKEOFF)
+            TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + i * (TAKE_OFF_H/NUM_WP_TAKEOFF)
         
-        if PRINTING:
-            print(f"TARGET_POS[{i}, :] = {TARGET_POS[i, :]}")
+        if TP_PRINTING:
+            if i % 100 == 0:
+                print(f"TARGET_POS[{i}, :] = {TARGET_POS[i, :]}")
+    # print(f"TARGET_POS[{0}, {0}] = {TARGET_POS[0, 0]}")
    
-    # Finding the path to the destination with RRT
+    # Finding the path to the destination
     task_start = TARGET_POS[NUM_WP_TAKEOFF-1, :].reshape(1,3)
     task_goal = np.array([1, -1, 1.2]).reshape(1,3)
-    task_path = rrt(deepcopy(env), deepcopy(task_start), deepcopy(task_goal))
-    
-    if PRINTING:
-            print(f"RRT path length = {len(task_path)}")
+    task_path = []
+    smooth_task_path = []
+    if collision_avoidance == 'rrt':
+        print(f"\n---------- RRT ----------\n")
+        task_path = rrt(deepcopy(env), deepcopy(task_start), deepcopy(task_goal), NUM_WP_TASK)
+        task_path_len = len(task_path)
+        if PRINTING:
+            print(f"task_path = {task_path}")
+            print(f"RRT path length = {task_path_len}")
+            print(f"RRT path shape = {task_path.shape}")
+        
+        # Smooth the path
+        smooth_task_path = np.zeros((NUM_WP_TASK,3))
+        if RRT_PRINTING:
+            print(f"smooth_task_path shape is {smooth_task_path.shape}")
+        if task_path_len < NUM_WP_TASK:
+            part_len = NUM_WP_TASK // (task_path_len - 1)
+            if RRT_PRINTING:
+                print(f"part_len = {part_len}\n")
+                
+            for i in range(task_path_len-1):
+                if RRT_PRINTING:
+                    print(f"section {i}:\n")
+                
+                sec_index = i*part_len
+                smooth_task_path[sec_index] = task_path[i]
+                if RRT_PRINTING:
+                    print(f"smooth_task_path[{sec_index}] = {smooth_task_path[sec_index]}")
+                
+                for j in range(1, part_len):
+                    step_diff_x = (task_path[i+1, 0] - task_path[i, 0]) / part_len
+                    step_diff_y = (task_path[i+1, 1] - task_path[i, 1]) / part_len
+                    step_diff_z = (task_path[i+1, 2] - task_path[i, 2]) / part_len
+                    smooth_task_path[sec_index+j] = smooth_task_path[sec_index+j-1] + [step_diff_x, step_diff_y, step_diff_z]
+                    if RRT_PRINTING:
+                        if sec_index+j % 100 == 0:
+                            print(f"smooth_task_path[{sec_index+j}] = {smooth_task_path[sec_index+j]}")
 
-    if GD_HOVER:
+    if GROUND_EFFECT:
         print(f"\n---------- FLY TO DESTINATION WITH GROUND EFFECT ----------\n")
     else:
         print(f"\n---------- FLY TO DESTINATION WITHOUT GROUND EFFECT ----------\n")
@@ -175,21 +214,39 @@ def run(
         # [DEBUG]: Generating the path to the destination without collision avoidance
         print(f"\n---------- DEBUG TRAJ ----------\n")
         for i in range(NUM_WP_TASK):
-            TARGET_POS[i+NUM_WP_TAKEOFF, :] = TARGET_POS[NUM_WP_TAKEOFF-1, 0] + i * (HOVER_H/NUM_WP_TASK), TARGET_POS[NUM_WP_TAKEOFF-1, 1], TARGET_POS[NUM_WP_TAKEOFF-1, 2]
-            if PRINTING:
-                print(f"TARGET_POS[{i+NUM_WP_TAKEOFF}, :] = {TARGET_POS[i+NUM_WP_TAKEOFF, :]}")
+            TARGET_POS[i+NUM_WP_TAKEOFF, :] = TARGET_POS[NUM_WP_TAKEOFF-1, 0] + i * (TAKE_OFF_H/NUM_WP_TASK), TARGET_POS[NUM_WP_TAKEOFF-1, 1], TARGET_POS[NUM_WP_TAKEOFF-1, 2]
+            if TP_PRINTING:
+                if i % 100 == 0:
+                    print(f"TARGET_POS[{i+NUM_WP_TAKEOFF}, :] = {TARGET_POS[i+NUM_WP_TAKEOFF, :]}")
     elif collision_avoidance == 'rrt':
-        print(f"\n---------- RRT ----------\n")
         for i in range(NUM_WP_TASK):
-            if i < len(task_path):
-                TARGET_POS[i+NUM_WP_TAKEOFF, :] = task_path[i]
-            elif len(task_path) > 0:
-                TARGET_POS[i+NUM_WP_TAKEOFF, :] = task_path[-1]
+            if i < len(smooth_task_path):
+                TARGET_POS[i+NUM_WP_TAKEOFF, :] = smooth_task_path[i]
+            elif len(smooth_task_path) > 0:
+                TARGET_POS[i+NUM_WP_TAKEOFF, :] = smooth_task_path[-1]
             else:
                 TARGET_POS[i+NUM_WP_TAKEOFF, :] = TARGET_POS[NUM_WP_TAKEOFF-1, :]
 
-            if PRINTING:
-                print(f"TASK_POS[{i}, :] = TARGET_POS[{i+NUM_WP_TAKEOFF}, :] = {TARGET_POS[i+NUM_WP_TAKEOFF, :]}")
+            if TP_PRINTING:
+                if i % 100 == 0:
+                    print(f"TARGET_POS[{i+NUM_WP_TAKEOFF}, :] = TASK_POS[{i}, :] = {TARGET_POS[i+NUM_WP_TAKEOFF, :]}")
+    
+    if TP_PRINTING:
+        print(f"TARGET_POS[{NUM_WP_TASK+NUM_WP_TAKEOFF-1}, :] = {TARGET_POS[NUM_WP_TASK+NUM_WP_TAKEOFF-1, :]}")
+
+    if GROUND_EFFECT:
+        print(f"\n---------- HOVER WITH GROUND EFFECT ----------\n")
+    else:
+        print(f"\n---------- HOVER WITHOUT GROUND EFFECT ----------\n")
+
+    for i in range(NUM_WP_HOVER):
+        TARGET_POS[i+NUM_WP_TAKEOFF+NUM_WP_TASK, :] = TARGET_POS[i+NUM_WP_TAKEOFF+NUM_WP_TASK-1, :]
+
+        if TP_PRINTING:
+                if i % 100 == 0:
+                    print(f"TARGET_POS[{i+NUM_WP_TAKEOFF+NUM_WP_TASK}, :] = {TARGET_POS[i+NUM_WP_TAKEOFF+NUM_WP_TASK, :]}")
+
+        
     
     wp_counter = 0
 
