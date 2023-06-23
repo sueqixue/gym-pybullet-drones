@@ -95,7 +95,7 @@ def rrt(env, start, goal, num_iter=500):
     if check_start or check_goal:
         return path
 
-    # Loading the obstacles
+    # Loading the obstacles and drone
     obstacles = env.obstacles_list
     drone_id = env.DRONE_IDS
     if PRINTING:
