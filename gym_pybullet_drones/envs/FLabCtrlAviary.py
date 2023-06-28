@@ -71,8 +71,9 @@ class FLabCtrlAviary(BaseAviary):
                          )
 
         self.obstacles_list = []
+        self.obstacles_id_list = []
         if obstacles:
-            self.obstacles_list = self._addObstacles()
+            self.obstacles_id_list, self.obstacles_list = self._addObstacles()
 
     ################################################################################
 
@@ -101,12 +102,13 @@ class FLabCtrlAviary(BaseAviary):
                    physicsClientId=self.CLIENT
                    )
     
-        # obstacles = [
-        #     samurai_id,
-        #     duck_id,
-        #     cube_id,
-        #     sphere2_id,
-        # ]
+        obstacles_id = [
+            samurai_id,
+            duck_id,
+            cube_id,
+            sphere_id,
+        ]
+
         obstacles = [
             p.getBasePositionAndOrientation(samurai_id),
             p.getBasePositionAndOrientation(duck_id),
@@ -114,7 +116,7 @@ class FLabCtrlAviary(BaseAviary):
             p.getBasePositionAndOrientation(sphere_id)
         ]
 
-        return obstacles
+        return obstacles_id, obstacles
     
     ################################################################################
 

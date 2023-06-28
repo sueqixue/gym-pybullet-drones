@@ -1,6 +1,7 @@
 import numpy as np
+import pybullet as p
 
-def droneDetectCollision(physics_client_id, drone_id, obstacle_id_list, drone_pos):
+def droneDetectCollision(physics_client_id, drone_id, obstacles_id_list, drone_pos):
     """
     Check if the drone position is collided with any obstacle in the
     obstacles list.
@@ -10,9 +11,14 @@ def droneDetectCollision(physics_client_id, drone_id, obstacle_id_list, drone_po
     :param drone_pos: the future/potential positin of the drone
     "return: boolean, true if the drone is in collision with any obstacle
     """
-    n_obstacles = len(obstacle_id_list)
+    print(f"Start collision detection with physics_client_id = {physics_client_id}\n")
+    print(f"drone_id = {drone_id[0]}\n")
+    p.performCollisionDetection(physics_client_id)
+
+    n_obstacles = len(obstacles_id_list)
     for i in range(n_obstacles):
-        if detectCollisionEachObstacle(physics_client_id, drone_id, obstacle_id_list[i], drone_pos):
+        print(f"Checking obstacle {i}, id = {obstacles_id_list[i]}\n")
+        if detectCollisionEachObstacle(physics_client_id, drone_id[0], obstacles_id_list[i], drone_pos):
             return True
     return False
 
@@ -26,11 +32,9 @@ def detectCollisionEachObstacle(physics_client_id, drone_id, obstacle_id, drone_
     :param drone_pos: the future/potential positin of the drone
     "return: boolean, true if the drone is in collision with this obstacle
     """
-    performCollisionDetection(physics_client_id)
+    print(f"Calling getContactPoints...\n")
     contact_points_list = p.getContactPoints(bodyA=drone_id,
                    bodyB=obstacle_id,
-                   linkindexA=-1,
-                   linkindexA=-1,
                    physicsClientId=physics_client_id
                    )
 

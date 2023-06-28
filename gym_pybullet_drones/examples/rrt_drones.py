@@ -1,5 +1,7 @@
 import numpy as np
+import pybullet as p
 import random
+from droneDetectCollision import droneDetectCollision
 
 # Debug boolens
 PRINTING = False
@@ -97,12 +99,17 @@ def rrt(env, start, goal, num_iter=500):
 
     # Loading the obstacles and drone
     obstacles = env.obstacles_list
+    obstacles_id = env.obstacles_id_list
     drone_id = env.DRONE_IDS
     physics_client_id = env.CLIENT
     if PRINTING:
         print(f"There is {len(obstacles)} obstacles in the environment.\n--------------------")
         for j in range(len(obstacles)):
             print(f"obstacles_{j} = {obstacles[j]}\n")
+
+    # Testing droneDetectCollision method
+    res = droneDetectCollision(physics_client_id, drone_id, obstacles_id, start)
+    print(f"{res}\n")
 
     # Check if there is any obstacles at the start and goal positions
     if isPosCollided(start, obstacles) or isPosCollided(goal, obstacles):
