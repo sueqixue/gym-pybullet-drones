@@ -98,6 +98,7 @@ def rrt(env, start, goal, num_iter=500):
     # Loading the obstacles and drone
     obstacles = env.obstacles_list
     drone_id = env.DRONE_IDS
+    physics_client_id = env.CLIENT
     if PRINTING:
         print(f"There is {len(obstacles)} obstacles in the environment.\n--------------------")
         for j in range(len(obstacles)):
