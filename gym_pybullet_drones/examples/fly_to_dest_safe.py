@@ -159,6 +159,7 @@ def run(
 
             if TARGET_POS[i, 2] < TARGET_POS[i-1, 2]:
                 HOVER_FLAG = True
+                NUM_WP_TAKEOFF = i+1
         else:
             TARGET_POS[i, :] = INIT_XYZ[0, 0], INIT_XYZ[0, 1], INIT_XYZ[0, 2] + i * (TAKE_OFF_H/NUM_WP_TAKEOFF)
         
@@ -252,7 +253,16 @@ def run(
                 if i % 100 == 0:
                     print(f"TARGET_POS[{i+NUM_WP_TAKEOFF+NUM_WP_TASK}, :] = {TARGET_POS[i+NUM_WP_TAKEOFF+NUM_WP_TASK, :]}")
 
-        
+    actual_num = NUM_WP_TAKEOFF + NUM_WP_TASK + NUM_WP_HOVER
+    print(actual_num)
+    print(NUM_WP)
+    if actual_num < NUM_WP:
+        for i in range(actual_num, NUM_WP):
+            TARGET_POS[i, :] = TARGET_POS[i-1, :]
+
+            if TP_PRINTING:
+                if i % 100 == 0:
+                    print(f"TARGET_POS[{i}, :] = {TARGET_POS[i, :]}")
     
     wp_counter = 0
 
