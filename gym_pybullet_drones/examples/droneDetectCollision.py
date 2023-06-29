@@ -39,8 +39,14 @@ def detectCollisionEachObstacle(physics_client_id, drone_id, obstacle_id, drone_
     :param drone_pos: the future/potential positin of the drone
     :return: boolean, true if the drone is in collision with this obstacle
     """
+    drone_pos = drone_pos.reshape(3,)
+
     if PRINTING:
         print(f"Calling getContactPoints...\n")
+        print(f"drone_pos.shape = {drone_pos.shape}")
+
+    _, drone_ori = p.getBasePositionAndOrientation(drone_id, physics_client_id)
+    p.resetBasePositionAndOrientation(drone_id, drone_pos, drone_ori, physics_client_id)
 
     contact_points_list = p.getContactPoints(bodyA=drone_id,
                    bodyB=obstacle_id,
@@ -50,4 +56,3 @@ def detectCollisionEachObstacle(physics_client_id, drone_id, obstacle_id, drone_
     if contact_points_list:
         return True
     return False
-    

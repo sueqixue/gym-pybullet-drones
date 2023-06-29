@@ -7,8 +7,8 @@ from droneDetectCollision import droneDetectCollision
 PRINTING = False
 
 class Node:
-    def __init__(self, q, parentIdx=None):
-        self.q = q
+    def __init__(self, pos, parentIdx=None):
+        self.pos = pos
         self.parentIdx = parentIdx
 
 ################################################################################
@@ -18,10 +18,12 @@ def isWithinLimit(pos, lowerLim, upperLim):
 
 ################################################################################
 
-def isPosCollided(q, obstacles, safe_dist=0.1):
+# Old naive collision detection which only check whether a pos is collided with
+# the base position of obstacles
+def isPosCollided(pos, obstacles, safe_dist=0.1):
     for obstacle in obstacles:
         obstacle_pos = obstacle[0]
-        dist = np.linalg.norm(q - obstacle_pos)
+        dist = np.linalg.norm(pos - obstacle_pos)
 
         if PRINTING:
             print(f"dist = {dist} and safe_dist = {safe_dist}")
@@ -32,37 +34,46 @@ def isPosCollided(q, obstacles, safe_dist=0.1):
 
 ################################################################################
 
-def isPathCollided(q_end, q_start, obstacles, num_steps=500):
-    step = (q_end - q_start) / num_steps
+# def isPathCollided(pos_end, pos_start, obstacles, num_steps=500):
+#     step = (pos_end - pos_start) / num_steps
+#     for i in range(1, 1 + num_steps):
+#         if isPosCollided(pos_start + (i * step), obstacles):
+#             return True
+#     return False
+
+################################################################################
+
+def isPathCollided(pos_end, pos_start, physics_client_id, drone_id, obstacles_id, num_steps=500):
+    step = (pos_end - pos_start) / num_steps
     for i in range(1, 1 + num_steps):
-        if isPosCollided(q_start + (i * step), obstacles):
+        if droneDetectCollision(physics_client_id, drone_id, obstacles_id, pos_start + (i * step)):
             return True
     return False
 
 ################################################################################
 
-def randomFreePos(lowerLim, upperLim, obstacles):
+def randomFreePos(lowerLim, upperLim, physics_client_id, drone_id, obstacles_id,):
     while True:
-        q_random = np.random.uniform(lowerLim, upperLim)
-        if not isPosCollided(q_random, obstacles):
+        pos_random = np.random.uniform(lowerLim, upperLim)
+        if not droneDetectCollision(physics_client_id, drone_id, obstacles_id, pos_random):
             break
 
-    return q_random
+    return pos_random
 
 ################################################################################
 
-def getClosestNode(q, nodeList):
+def getClosestNode(pos, nodeList):
     len_nodeList = len(nodeList)
     diff = 1000000
-    q_closest_idx = -1
+    pos_closest_idx = -1
 
     for i in range(len_nodeList):
-        this_diff = np.linalg.norm(q - nodeList[i].q)
+        this_diff = np.linalg.norm(pos - nodeList[i].pos)
         if this_diff < diff:
             diff = this_diff
-            q_closest_idx = i
+            pos_closest_idx = i
 
-    return q_closest_idx
+    return pos_closest_idx
 
 ################################################################################
 
@@ -108,11 +119,13 @@ def rrt(env, start, goal, num_iter=500):
             print(f"obstacles_{j} = {obstacles[j]}\n")
 
     # Testing droneDetectCollision method
-    res = droneDetectCollision(physics_client_id, drone_id, obstacles_id, start)
-    print(f"{res}\n")
+    # res = droneDetectCollision(physics_client_id, drone_id, obstacles_id, start)
+    # print(f"{res}\n")
 
     # Check if there is any obstacles at the start and goal positions
-    if isPosCollided(start, obstacles) or isPosCollided(goal, obstacles):
+    # if isPosCollided(start, obstacles) or isPosCollided(goal, obstacles):
+    if (droneDetectCollision(physics_client_id, drone_id, obstacles_id, start) or 
+        droneDetectCollision(physics_client_id, drone_id, obstacles_id, goal)):
         return path
 
     # Initialize the nodelist for start and goal
@@ -121,38 +134,38 @@ def rrt(env, start, goal, num_iter=500):
     
     # Finding the path
     for i in range(num_iter):
-        q = randomFreePos(lowerLim, upperLim, obstacles)    # Random configuration in Q_free
+        pos = randomFreePos(lowerLim, upperLim, physics_client_id, drone_id, obstacles_id)            
 
-        idx_q_a = getClosestNode(q, T_start)                # Get closest node in T_start
-        q_a = T_start[idx_q_a].q                            # Get point q_a
-        q_a_flag = isPathCollided(q_a, q, obstacles)        # Check if edge qq_a collide with obstacles
+        idx_pos_a = getClosestNode(pos, T_start)                                                        
+        pos_a = T_start[idx_pos_a].pos                                                                       
+        pos_a_flag = isPathCollided(pos_a, pos, physics_client_id, drone_id, obstacles_id)        
 
-        if not q_a_flag:                                    # Add (q, q_a) to T_start
-            T_start.append(Node(q, idx_q_a))
+        if not pos_a_flag:                                                                          
+            T_start.append(Node(pos, idx_pos_a))
 
-        idx_q_b = getClosestNode(q, T_goal)                 # Get closest node in T_gaol
-        q_b = T_goal[idx_q_b].q                             # Get point q_b
-        q_b_flag = isPathCollided(q_b, q, obstacles)        # Check if edge qq_b collide with obstacles
+        idx_pos_b = getClosestNode(pos, T_goal)                                                          
+        pos_b = T_goal[idx_pos_b].pos                                                                   
+        pos_b_flag = isPathCollided(pos_b, pos, physics_client_id, drone_id, obstacles_id)      
 
-        if not q_b_flag:                                    # Add (q_b, q) to T_goal
-            T_goal.append(Node(q, idx_q_b))
+        if not pos_b_flag:                                                                           
+            T_goal.append(Node(pos, idx_pos_b))
 
-        if not q_a_flag and not q_b_flag:                   # No collisions between qq_a and qq_b
+        if not pos_a_flag and not pos_b_flag:                                                           
             # Connect the nodes from T_start
             curr_node = T_start[-1]
-            path_start = [curr_node.q]
+            path_start = [curr_node.pos]
 
             while curr_node.parentIdx is not None:
                 curr_node = T_start[curr_node.parentIdx]
-                path_start.append(curr_node.q)
+                path_start.append(curr_node.pos)
 
             # Connect the nodes from T_goal
-            curr_node = T_goal[-1]                            # T_goal[-1] = T_start[-1]
-            path_goal = [curr_node.q]
+            curr_node = T_goal[-1]                                                                      # T_goal[-1] = T_start[-1]
+            path_goal = [curr_node.pos]
 
             while curr_node.parentIdx is not None:
                 curr_node = T_goal[curr_node.parentIdx]
-                path_goal.append(curr_node.q)
+                path_goal.append(curr_node.pos)
 
             # Get the path
             path = np.array(path_start[::-1] + path_goal[1:])

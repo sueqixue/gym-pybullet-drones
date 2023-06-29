@@ -119,12 +119,12 @@ def run(
 
     #### Initialize a desired trajectory ######################
     """
-    TODO: taking off the drone to the hover xyz and move to the dest position.
-        Note that TARGET_POS is an array contains the position at each sampling
-        point, which means it contains the infomation of the desired trajectory/
-        path of the current task. So when implementing any collision avoidance
-        algorithms/controller, use the input src and dest position to find the
-        optimal trajectory/path.
+    Taking off the drone to the hover xyz and move to the dest position.
+    Note that TARGET_POS is an array contains the position at each sampling
+    point, which means it contains the infomation of the desired trajectory/
+    path of the current task. So when implementing any collision avoidance
+    algorithms/controller, use the input src and dest position to find the
+    optimal trajectory/path.
     """
     TAKE_OFF_PAR = 0.15*3
     TAKE_OFF_H = 1
@@ -138,6 +138,9 @@ def run(
     NUM_WP_TASK = control_freq_hz*TASK_PERIOD
     NUM_WP_HOVER = control_freq_hz*HOVER_PERIOD
     NUM_WP = NUM_WP_TAKEOFF + NUM_WP_TASK + NUM_WP_HOVER
+
+    # Get the origin pos and ori of the drone, since they might be changed during collision detection
+    drone_origin_pos, drone_origin_ori = p.getBasePositionAndOrientation(env.DRONE_IDS[0], env.CLIENT)
 
     TARGET_POS = np.zeros((NUM_WP,3))
     
@@ -209,6 +212,9 @@ def run(
         print(f"\n---------- FLY TO DESTINATION WITH GROUND EFFECT ----------\n")
     else:
         print(f"\n---------- FLY TO DESTINATION WITHOUT GROUND EFFECT ----------\n")
+
+    # Reset the pos and ori of the drone after collision detection
+    p.resetBasePositionAndOrientation(env.DRONE_IDS[0], drone_origin_pos, drone_origin_ori, env.CLIENT)
 
     if collision_avoidance == 'none':
         # [DEBUG]: Generating the path to the destination without collision avoidance
