@@ -1,6 +1,7 @@
 import numpy as np
 import pybullet as p
 from gym import spaces
+from robot import KUKASAKE
 
 from gym_pybullet_drones.envs.BaseAviary import BaseAviary
 from gym_pybullet_drones.utils.enums import DroneModel, Physics
@@ -101,19 +102,33 @@ class FLabCtrlAviary(BaseAviary):
                    p.getQuaternionFromEuler([0, 0, 0]),
                    physicsClientId=self.CLIENT
                    )
+        table_id = p.loadURDF("objects/table.urdf",
+                   [2, 2, .5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   useFixedBase=True,
+                   physicsClientId=self.CLIENT
+                   )
+
+        kuka = KUKASAKE(p, [-2, -2, .5],
+                        p.getQuaternionFromEuler([0, 0, 0]))
+        robot_id = kuka.robot_id
     
         obstacles_id = [
             samurai_id,
             duck_id,
             cube_id,
             sphere_id,
+            table_id,
+            robot_id
         ]
 
         obstacles = [
             p.getBasePositionAndOrientation(samurai_id),
             p.getBasePositionAndOrientation(duck_id),
             p.getBasePositionAndOrientation(cube_id),
-            p.getBasePositionAndOrientation(sphere_id)
+            p.getBasePositionAndOrientation(sphere_id),
+            p.getBasePositionAndOrientation(table_id),
+            p.getBasePositionAndOrientation(robot_id)
         ]
 
         return obstacles_id, obstacles

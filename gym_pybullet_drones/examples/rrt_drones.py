@@ -77,6 +77,24 @@ def getClosestNode(pos, nodeList):
 
 ################################################################################
 
+def prunedPath(path, physics_client_id, drone_id, obstacles_id):
+    sub_paths = []
+
+    # MPC
+    for i in range(len(path) - 2):
+        sub_path = path
+        for j in range(i + 2, len(path)):
+            if not isPathCollided(path[i], path[j], physics_client_id, drone_id, obstacles_id):
+                sub_path = np.vstack((path[:i+1], path[j:]))
+        sub_paths.append(sub_path)
+
+    costs = np.array([np.linalg.norm(p[1:] - p[:-1]).sum() for p in sub_paths])
+    pruned_path = sub_paths[np.argmin(costs)]
+
+    return pruned_path
+
+################################################################################
+
 def rrt(env, start, goal, num_iter=500):
     """
     RRT algorithm
@@ -172,8 +190,11 @@ def rrt(env, start, goal, num_iter=500):
             path = path.reshape(path.shape[0], 3)
             print(f"path = {path}")
 
+            pruned_path = prunedPath(path, physics_client_id, drone_id, obstacles_id)
+            print(f"pruned_path = {pruned_path}")
+
             if PRINTING:
                 print(f"path shape = {path.shape}")
-            return path
+            return pruned_path
 
     return []
