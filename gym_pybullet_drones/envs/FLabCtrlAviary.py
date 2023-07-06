@@ -109,7 +109,7 @@ class FLabCtrlAviary(BaseAviary):
                    physicsClientId=self.CLIENT
                    )
 
-        kuka = KUKASAKE(p, [-2, -2, .5],
+        kuka = KUKASAKE(p, [2, 2, .5],
                         p.getQuaternionFromEuler([0, 0, 0]))
         robot_id = kuka.robot_id
     

@@ -213,7 +213,7 @@ class Logger(object):
         """
         #### Loop over colors and line styles ######################
         plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) + cycler('linestyle', ['-', '--', ':', '-.'])))
-        fig, axs = plt.subplots(10, 2)
+        fig, axs = plt.subplots(10, 3)
         t = np.arange(0, self.timestamps.shape[1]/self.LOGGING_FREQ_HZ, 1/self.LOGGING_FREQ_HZ)
 
         #### Column ################################################
@@ -358,6 +358,46 @@ class Logger(object):
             axs[row, col].set_ylabel('PWM3')
         else:
             axs[row, col].set_ylabel('RPM3')
+
+        #### Adding a = delta v / delta t
+        #### Acceleration ##########################################
+        col = 2
+        row = 0
+        for j in range(self.NUM_DRONES):
+            vx = self.states[j, 3, :]
+            ax = np.zeros(vx.shape)
+            for k in range(t.shape[0]):
+                ax[0] = 0
+                if k != 0:
+                    ax[k] = (abs(vx[k]) - abs(vx[k-1])) / (t[k] - t[k-1])
+            axs[row, col].plot(t, ax, label="drone_"+str(j))
+        axs[row, col].set_xlabel('time')
+        axs[row, col].set_ylabel('ax (m/s^2)')
+
+        row = 1
+        for j in range(self.NUM_DRONES):
+            vy = self.states[j, 4, :]
+            ay = np.zeros(vy.shape)
+            for k in range(t.shape[0]):
+                ay[0] = 0
+                if k != 0:
+                    ay[k] = (abs(vy[k]) - abs(vy[k-1])) / (t[k] - t[k-1])
+            axs[row, col].plot(t, ay, label="drone_"+str(j))
+        axs[row, col].set_xlabel('time')
+        axs[row, col].set_ylabel('ay (m/s^2)')
+
+        row = 2
+        for j in range(self.NUM_DRONES):
+            vz = self.states[j, 5, :]
+            az = np.zeros(vz.shape)
+            for k in range(t.shape[0]):
+                az[0] = 0
+                if k != 0:
+                    az[k] = (abs(vz[k]) - abs(vz[k-1])) / (t[k] - t[k-1])
+                    # print(f"{az[k]} = {abs(vz[k]) - abs(vz[k-1])} / {t[k] - t[k-1]})")
+            axs[row, col].plot(t, az, label="drone_"+str(j))
+        axs[row, col].set_xlabel('time')
+        axs[row, col].set_ylabel('az (m/s^2)')
 
         #### Drawing options #######################################
         for i in range (10):
