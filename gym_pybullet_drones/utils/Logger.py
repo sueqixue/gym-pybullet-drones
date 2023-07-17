@@ -363,41 +363,62 @@ class Logger(object):
         #### Acceleration ##########################################
         col = 2
         row = 0
+        drone_weight = 0.042
+        total_energy = np.zeros(self.NUM_DRONES)
+
         for j in range(self.NUM_DRONES):
             vx = self.states[j, 3, :]
             ax = np.zeros(vx.shape)
+            ex = np.zeros(vx.shape)
             for k in range(t.shape[0]):
                 ax[0] = 0
                 if k != 0:
                     ax[k] = (abs(vx[k]) - abs(vx[k-1])) / (t[k] - t[k-1])
+                    ex[k] = abs(drone_weight * ax[k] * vx[k] * t[k])
             axs[row, col].plot(t, ax, label="drone_"+str(j))
+            axs[row+3, col].plot(t, ex, label="drone_"+str(j))
+            total_energy[j] += np.sum(ex)
         axs[row, col].set_xlabel('time')
         axs[row, col].set_ylabel('ax (m/s^2)')
+        axs[row+3, col].set_xlabel('time')
+        axs[row+3, col].set_ylabel('px (J)')
 
         row = 1
         for j in range(self.NUM_DRONES):
             vy = self.states[j, 4, :]
             ay = np.zeros(vy.shape)
+            ey = np.zeros(vy.shape)
             for k in range(t.shape[0]):
                 ay[0] = 0
                 if k != 0:
                     ay[k] = (abs(vy[k]) - abs(vy[k-1])) / (t[k] - t[k-1])
+                    ey[k] = abs(drone_weight * ay[k] * vy[k] * t[k])
             axs[row, col].plot(t, ay, label="drone_"+str(j))
+            axs[row+3, col].plot(t, ey, label="drone_"+str(j))
+            total_energy[j] += np.sum(ey)
         axs[row, col].set_xlabel('time')
         axs[row, col].set_ylabel('ay (m/s^2)')
+        axs[row+3, col].set_xlabel('time')
+        axs[row+3, col].set_ylabel('px (J)')
 
         row = 2
         for j in range(self.NUM_DRONES):
             vz = self.states[j, 5, :]
             az = np.zeros(vz.shape)
+            ez = np.zeros(vz.shape)
             for k in range(t.shape[0]):
                 az[0] = 0
                 if k != 0:
                     az[k] = (abs(vz[k]) - abs(vz[k-1])) / (t[k] - t[k-1])
+                    ez[k] = abs(drone_weight * az[k] * vz[k] * t[k])
                     # print(f"{az[k]} = {abs(vz[k]) - abs(vz[k-1])} / {t[k] - t[k-1]})")
             axs[row, col].plot(t, az, label="drone_"+str(j))
+            axs[row+3, col].plot(t, ez, label="drone_"+str(j))
+            total_energy[j] += np.sum(ez)
         axs[row, col].set_xlabel('time')
         axs[row, col].set_ylabel('az (m/s^2)')
+        axs[row+3, col].set_xlabel('time')
+        axs[row+3, col].set_ylabel('px (J)')
 
         #### Drawing options #######################################
         for i in range (10):
@@ -413,7 +434,20 @@ class Logger(object):
                             wspace=0.15,
                             hspace=0.0
                             )
+
+        # Show total_energy
+        for j in range(self.NUM_DRONES):
+            msg = "[Drone " + str(j) + "] TOTAL ENERGY CONSUMPTION = " + str(total_energy[j]) + " J"
+            if self.NUM_DRONES == 1:
+                txt_height = .09
+            else:
+                 txt_height = .12 - j * 0.03
+            txt = fig.text(.723, txt_height, msg)
+        
         if self.COLAB: 
             plt.savefig(os.path.join('results', 'output_figure.png'))
         else:
             plt.show()
+
+        
+
