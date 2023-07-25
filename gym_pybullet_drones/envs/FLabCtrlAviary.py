@@ -1,3 +1,9 @@
+"""`FLabCtrlAviary` environment extend 'BaseAviary.py'
+
+Modified from envs/sCtrlAviary.py by Qi Xue (qixue@seas.upenn.edu).
+
+"""
+
 import numpy as np
 import pybullet as p
 from gym import spaces

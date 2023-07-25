@@ -10,7 +10,9 @@ In a terminal, run as:
 
 Notes
 -----
-Modified from groundeffect.py: the drone altitude tracks a sinusoid, near the ground plane.
+Let the drone take off and hover.
+
+Modified from examples/groundeffect.py by Qi Xue (qixue@seas.upenn.edu).
 
 """
 import os
