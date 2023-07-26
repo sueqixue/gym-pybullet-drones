@@ -1,3 +1,15 @@
+"""---------------------------------------------------------------------
+Figueroa Robotics Lab
+------------------------------------------------------------------------
+
+Example     Init the kuka by calling KUKASAKE()
+
+Notes       Script to include the 3D model of the kuka robot as obstacles
+            in PyBullet environment.
+
+------------------------------------------------------------------------
+Implemented by Ho Jin Choi (cr139139@seas.upenn.edu).
+---------------------------------------------------------------------"""
 import numpy as np
 from typing import List
 
