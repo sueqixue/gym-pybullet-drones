@@ -114,8 +114,8 @@ def rrt(env, start, goal, num_iter=500):
     path_goal = []
 
     # Drone workspace limits
-    upperLim = np.array([5, 5, 2]).reshape(1,3)    # Ceiling height - maybe camera height
-    lowerLim = np.array([-5, -5, 0.2]).reshape(1,3)  # Lower limit to avoid ground effect
+    upperLim = np.array([5, 5, 5]).reshape(1,3)    # Ceiling height - maybe camera height
+    lowerLim = np.array([-5, -5, 0]).reshape(1,3)  # Lower limit to avoid ground effect
 
     if PRINTING:
         print(f"--------------------\nstart = {start}\ngoal = {goal}\n--------------------")
@@ -124,6 +124,7 @@ def rrt(env, start, goal, num_iter=500):
     check_start = not isWithinLimit(start, lowerLim, upperLim)
     check_goal = not isWithinLimit(goal, lowerLim, upperLim)  
     if check_start or check_goal:
+        print("src or dest out of limits.\n")
         return path
 
     # Loading the obstacles and drone
