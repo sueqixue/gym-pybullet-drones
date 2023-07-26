@@ -1,19 +1,18 @@
-"""The simulation is run by a `FLabCtrlAviary` environment.
+"""---------------------------------------------------------------------
+Figueroa Robotics Lab
+------------------------------------------------------------------------
 
-Example
--------
-In a terminal, run as:
+Example     Run $ python fly_task.py
 
-    $ python fly_task.py
+Notes       The simulation is run by a `FLabCtrlAviary` environment.
+            Let the drone take off and fly from a src position to a 
+            dest position.
+            Use to test different collision avoidance algorithms.
 
-Notes
------
-Let the drone take off and fly from a src position to a dest position.
-Use to test different collision avoidance algorithms.
-
+------------------------------------------------------------------------
 Modified from examples/groundeffect.py by Qi Xue (qixue@seas.upenn.edu).
+---------------------------------------------------------------------"""
 
-"""
 import os
 import time
 import argparse
@@ -120,7 +119,7 @@ def run_fly_task(
     #### Initialize the controller #############################
     ctrl = DSLPIDControl(drone_model=drone)
 
-    #### Initialize a desired trajectory ######################
+    #### Initialize a desired trajectory #######################
     TAKEOFF_PERIOD = 8
     TASK_PERIOD = 12
     HOVER_PERIOD = 4

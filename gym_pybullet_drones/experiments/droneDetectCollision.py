@@ -1,8 +1,23 @@
+"""---------------------------------------------------------------------
+Figueroa Robotics Lab
+------------------------------------------------------------------------
+
+Example     Call droneDetectCollision()
+
+Notes       Functions for drone collision detecting using the
+            default collision detection packages.
+
+------------------------------------------------------------------------
+Implemented by Qi Xue (qixue@seas.upenn.edu).
+---------------------------------------------------------------------"""
+
 import numpy as np
 import pybullet as p
 
 # Debug boolens
 PRINTING = False
+
+################################################################################
 
 def droneDetectCollision(physics_client_id, drone_id, obstacles_id_list, drone_pos):
     """
@@ -28,6 +43,8 @@ def droneDetectCollision(physics_client_id, drone_id, obstacles_id_list, drone_p
         if detectCollisionEachObstacle(physics_client_id, drone_id[0], obstacles_id_list[i], drone_pos):
             return True
     return False
+
+################################################################################
 
 def detectCollisionEachObstacle(physics_client_id, drone_id, obstacle_id, drone_pos):
     """

@@ -1,18 +1,16 @@
-"""The simulation is run by a `FLabCtrlAviary` environment.
+"""---------------------------------------------------------------------
+Figueroa Robotics Lab
+------------------------------------------------------------------------
 
-Example
--------
-In a terminal, run as:
+Example     Run $ python traj_opt.py
 
-    $ python traj_opt.py
+Notes       The simulation is run by a `FLabCtrlAviary` environment.
+            Trajetory generation.
 
-Notes
------
-Trajetory generation.
-
+------------------------------------------------------------------------
 Implemented by Qi Xue (qixue@seas.upenn.edu).
+---------------------------------------------------------------------"""
 
-"""
 import numpy as np
 from copy import deepcopy
 from rrt_drones import * 
@@ -39,20 +37,21 @@ path of the current task. So when implementing any collision avoidance
 algorithms/controller, use the input src and dest position to find the
 optimal trajectory/path.
 """
-def traj_opt(INIT_XYZ, 
-            HOVER_XYZ, 
-            DEST_XYZ,
-            drone_origin_pos,
-            drone_origin_ori,
-            env,
-            GROUND_EFFECT=True,
-            TAKEOFF_PERIOD=8,
-            TASK_PERIOD=12,
-            HOVER_PERIOD=4,
-            control_freq_hz=240,
-            collision_avoidance=RRT,
-            take_off_flag=False
-            ):
+def traj_opt(
+        INIT_XYZ, 
+        HOVER_XYZ, 
+        DEST_XYZ,
+        drone_origin_pos,
+        drone_origin_ori,
+        env,
+        GROUND_EFFECT=True,
+        TAKEOFF_PERIOD=8,
+        TASK_PERIOD=12,
+        HOVER_PERIOD=4,
+        control_freq_hz=240,
+        collision_avoidance=RRT,
+        take_off_flag=False
+        ):
    
     TAKE_OFF_PAR = 0.15*3
     TAKE_OFF_H = HOVER_XYZ[0, 2]
@@ -75,7 +74,7 @@ def traj_opt(INIT_XYZ,
 
     TARGET_POS = np.zeros((NUM_WP,3))
 
-    # Take off
+    #### Take off ###########################################################
     if take_off_flag:
         if GROUND_EFFECT:
             print(f"\n---------- TAKE OFF WITH GROUND EFFECT ----------\n")
@@ -103,7 +102,7 @@ def traj_opt(INIT_XYZ,
     else:
         task_start = INIT_XYZ
 
-    # Finding the path to the destination
+    #### Finding the path to the destination ################################
     task_goal = DEST_XYZ
     task_path = []
     smooth_task_path = []
@@ -143,6 +142,7 @@ def traj_opt(INIT_XYZ,
                         if sec_index+j % 100 == 0:
                             print(f"smooth_task_path[{sec_index+j}] = {smooth_task_path[sec_index+j]}")
 
+    #### Fly Task ###########################################################
     if GROUND_EFFECT:
         print(f"\n---------- FLY TO DESTINATION WITH GROUND EFFECT ----------\n")
     else:
@@ -175,6 +175,7 @@ def traj_opt(INIT_XYZ,
     if TP_PRINTING:
         print(f"TARGET_POS[{NUM_WP_TASK+NUM_WP_TAKEOFF-1}, :] = {TARGET_POS[NUM_WP_TASK+NUM_WP_TAKEOFF-1, :]}")
 
+    #### Hover #############################################################
     if not take_off_flag:
         if GROUND_EFFECT:
             print(f"\n---------- HOVER WITH GROUND EFFECT ----------\n")
@@ -193,6 +194,7 @@ def traj_opt(INIT_XYZ,
         print(f"actual_num = {actual_num}")
         print(f"NUM_WP = {NUM_WP}")
 
+    #### Clean the traj #####################################################
     if actual_num < NUM_WP:
         NUM_WP = actual_num
         # for i in range(actual_num, NUM_WP):

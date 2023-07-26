@@ -1,8 +1,15 @@
-"""`FLabCtrlAviary` environment extend 'BaseAviary.py'
+"""---------------------------------------------------------------------
+Figueroa Robotics Lab
+------------------------------------------------------------------------
 
+Example     Init the env by calling FLabCtrlAviary()
+
+Notes       `FLabCtrlAviary` environment extend 'BaseAviary' environment.
+            Add customized obstacles.
+
+------------------------------------------------------------------------
 Modified from envs/sCtrlAviary.py by Qi Xue (qixue@seas.upenn.edu).
-
-"""
+---------------------------------------------------------------------"""
 
 import numpy as np
 import pybullet as p

@@ -1,19 +1,16 @@
-"""The simulation is run by a `FLabCtrlAviary` environment.
+"""---------------------------------------------------------------------
+Figueroa Robotics Lab
+------------------------------------------------------------------------
 
-Example
--------
-In a terminal, run as:
+Example     Run $ python my_tasks.py
 
-    $ python my_tasks.py
+Notes       Let the drone do some tasks in designed order.
+            Use to test different collision avoidance algorithms.
 
-Notes
------
-Let the drone do some tasks in designed order.
-Use to test different collision avoidance algorithms.
-
+------------------------------------------------------------------------
 Implemented by Qi Xue (qixue@seas.upenn.edu).
+---------------------------------------------------------------------"""
 
-"""
 from fly_task import *
 
 """ Collision avoidance algorithms

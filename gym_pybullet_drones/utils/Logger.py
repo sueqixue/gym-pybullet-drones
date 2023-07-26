@@ -1,3 +1,16 @@
+"""---------------------------------------------------------------------
+Figueroa Robotics Lab
+------------------------------------------------------------------------
+
+Example     Init the logger by calling logger()
+
+Notes       Add acceleration plots.
+            Add total energy consumption calculation.
+
+------------------------------------------------------------------------
+Modified from utils/logger.py by Qi Xue (qixue@seas.upenn.edu).
+---------------------------------------------------------------------"""
+
 import os
 from datetime import datetime
 from cycler import cycler
