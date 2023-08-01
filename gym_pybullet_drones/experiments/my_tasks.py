@@ -56,4 +56,4 @@ run_fly_task(
     dest_pos=DEFAULT_DEST_POS
     )
 """
-run_fly_task(src_pos=[0.5, 0.5, 1], dest_pos=[1, 2, 1.2], collision_avoidance=RRT)
+run_fly_task(src_pos=[0.5, 0.5, 0], dest_pos=[1, 1, 1.2], collision_avoidance=RRT)

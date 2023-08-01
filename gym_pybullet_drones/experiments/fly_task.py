@@ -162,7 +162,7 @@ def run_fly_task(
                                 HOVER_PERIOD=HOVER_PERIOD,
                                 control_freq_hz=control_freq_hz,
                                 collision_avoidance=RRT,
-                                take_off_flag=False)
+                                take_off_flag=(not ASSIST))
 
     if ASSIST:
         print(f"\nTARGET_POS_prep.shape = {TARGET_POS_prep.shape}")
