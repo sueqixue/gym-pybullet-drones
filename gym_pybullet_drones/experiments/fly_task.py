@@ -46,7 +46,7 @@ DEFAULT_AGGREGATE = True
 DEFAULT_OBSTACLES = True
 DEFAULT_SIMULATION_FREQ_HZ = 240
 DEFAULT_CONTROL_FREQ_HZ = 240
-DEFAULT_DURATION_SEC = 24
+DEFAULT_DURATION_SEC = 60
 DEFAULT_OUTPUT_FOLDER = 'results'
 DEFAULT_COLAB = False
 DEFAULT_GD = True
@@ -63,6 +63,11 @@ DUMMY = 'none'
 RRT = 'rrt'
 PP = 'pp'
 DEFAULT_COLLISION_AVOIDANCE = RRT
+
+# Debug boolens
+PRINTING = False
+RRT_PRINTING = False
+TP_PRINTING = True
 
 def run_fly_task(
         drone=DEFAULT_DRONES,
@@ -123,7 +128,10 @@ def run_fly_task(
     TAKEOFF_PERIOD = 8
     TASK_PERIOD = 12
     HOVER_PERIOD = 4
+    TOTAL_PERIOD = TAKEOFF_PERIOD + TASK_PERIOD + HOVER_PERIOD
     control_freq_hz = 240
+
+    ENV_TOTAL_WP = TOTAL_PERIOD * control_freq_hz
 
     # Get the origin pos and ori of the drone, since they might be changed during collision detection
     drone_origin_pos, drone_origin_ori = p.getBasePositionAndOrientation(env.DRONE_IDS[0], env.CLIENT)
@@ -163,15 +171,34 @@ def run_fly_task(
                                 control_freq_hz=control_freq_hz,
                                 collision_avoidance=RRT,
                                 take_off_flag=(not ASSIST))
-
+    
     if ASSIST:
-        print(f"\nTARGET_POS_prep.shape = {TARGET_POS_prep.shape}")
-        print(f"TARGET_POS_task.shape = {TARGET_POS.shape}")
+        if PRINTING:
+            print(f"\nTARGET_POS_prep.shape = {TARGET_POS_prep.shape}")
+            print(f"TARGET_POS_task.shape = {TARGET_POS.shape}")
         p.resetBasePositionAndOrientation(env.DRONE_IDS[0], drone_sim_origin_pos, drone_sim_origin_ori, env.CLIENT)
         TARGET_POS = np.append(TARGET_POS_prep, TARGET_POS, axis = 0)
         NUM_WP += NUM_WP_prep
+    
+    if PRINTING:
+        print(f"NUM_WP = {NUM_WP}")
+        print(f"ENV_TOTAL_WP = {ENV_TOTAL_WP}")
+    
+    if NUM_WP < ENV_TOTAL_WP:
+        END_HOVER_WP = ENV_TOTAL_WP - NUM_WP
+        TARGET_POS = np.append(TARGET_POS, np.zeros((END_HOVER_WP,3)), axis = 0)
+        for i in range(NUM_WP, ENV_TOTAL_WP):
+            TARGET_POS[i, :] = TARGET_POS[NUM_WP-1, :]
 
-    print(f"TARGET_POS.shape = {TARGET_POS.shape}\n")
+            if TP_PRINTING:
+                if i % 100 == 0:
+                    print(f"TARGET_POS[{i}, :] = {TARGET_POS[i, :]}")
+        
+        NUM_WP = ENV_TOTAL_WP
+
+    if PRINTING:
+        print(f"\nTARGET_POS.shape = {TARGET_POS.shape}")
+        print(f"NUM_WP = {NUM_WP}")
 
     wp_counter = 0
 
@@ -179,7 +206,8 @@ def run_fly_task(
     CTRL_EVERY_N_STEPS = int(np.floor(env.SIM_FREQ/control_freq_hz))
     action = {"0": np.array([0,0,0,0])}
     START = time.time()
-    for i in range(0, int(duration_sec*env.SIM_FREQ), AGGR_PHY_STEPS):
+    # for i in range(0, int(duration_sec*env.SIM_FREQ), AGGR_PHY_STEPS):
+    for i in range(0, NUM_WP, AGGR_PHY_STEPS):
 
         #### Step the simulation ###################################
         obs, reward, done, info = env.step(action)
