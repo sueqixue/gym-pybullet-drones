@@ -97,51 +97,182 @@ class FLabCtrlAviary(BaseAviary):
         These obstacles are loaded from standard URDF files included in Bullet.
 
         """
-        samurai_id = p.loadURDF("samurai.urdf",
-                   physicsClientId=self.CLIENT
-                   )
-        duck_id = p.loadURDF("duck_vhacd.urdf",
-                   [-.5, -.5, .05],
-                   p.getQuaternionFromEuler([0, 0, 0]),
-                   physicsClientId=self.CLIENT
-                   )
-        cube_id = p.loadURDF("cube_no_rotation.urdf",
-                   [-.5, -2.5, .5],
-                   p.getQuaternionFromEuler([0, 0, 0]),
-                   physicsClientId=self.CLIENT
-                   )
+        # samurai_id = p.loadURDF("samurai.urdf",
+        #            physicsClientId=self.CLIENT
+        #            )
+        # duck_id = p.loadURDF("duck_vhacd.urdf",
+        #            [-.5, -.5, .05],
+        #            p.getQuaternionFromEuler([0, 0, 0]),
+        #            physicsClientId=self.CLIENT
+        #            )
         sphere_id = p.loadURDF("sphere2.urdf",
                    [.7, 0, .5],
                    p.getQuaternionFromEuler([0, 0, 0]),
                    physicsClientId=self.CLIENT
                    )
-        table_id = p.loadURDF("objects/table.urdf",
-                   [2, 2, .5],
+
+        cube1_id = p.loadURDF("cube_no_rotation.urdf",
+                   [-3.5, 0, .5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube2_id = p.loadURDF("cube_no_rotation.urdf",
+                   [-3.5, 1, .5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube3_id = p.loadURDF("cube_no_rotation.urdf",
+                   [-3.5, 2, .5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube4_id = p.loadURDF("cube_no_rotation.urdf",
+                   [-3.5, 3, .5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube5_id = p.loadURDF("cube_no_rotation.urdf",
+                   [-3.5, 4, .5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube1t_id = p.loadURDF("cube_no_rotation.urdf",
+                   [-3.5, 0, 1.5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube2t_id = p.loadURDF("cube_no_rotation.urdf",
+                   [-3.5, 1, 1.5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube3t_id = p.loadURDF("cube_no_rotation.urdf",
+                   [-3.5, 2, 1.5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube4t_id = p.loadURDF("cube_no_rotation.urdf",
+                   [-3.5, 3, 1.5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube5t_id = p.loadURDF("cube_no_rotation.urdf",
+                   [-3.5, 4, 1.5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+
+        cube6_id = p.loadURDF("cube_no_rotation.urdf",
+                   [2.5, 0, .5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube7_id = p.loadURDF("cube_no_rotation.urdf",
+                   [2.5, 1, .5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube8_id = p.loadURDF("cube_no_rotation.urdf",
+                   [2.5, 2, .5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube9_id = p.loadURDF("cube_no_rotation.urdf",
+                   [2.5, 3, .5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube10_id = p.loadURDF("cube_no_rotation.urdf",
+                   [2.5, 4, .5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube6t_id = p.loadURDF("cube_no_rotation.urdf",
+                   [2.5, 0, 1.5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube7t_id = p.loadURDF("cube_no_rotation.urdf",
+                   [2.5, 1, 1.5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube8t_id = p.loadURDF("cube_no_rotation.urdf",
+                   [2.5, 2, 1.5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube9t_id = p.loadURDF("cube_no_rotation.urdf",
+                   [2.5, 3, 1.5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )
+        cube10t_id = p.loadURDF("cube_no_rotation.urdf",
+                   [2.5, 4, 1.5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   physicsClientId=self.CLIENT
+                   )        
+                   
+        
+        table1_id = p.loadURDF("objects/table.urdf",
+                   [-1, 2, .5],
+                   p.getQuaternionFromEuler([0, 0, 0]),
+                   useFixedBase=True,
+                   physicsClientId=self.CLIENT
+                   )
+        table2_id = p.loadURDF("objects/table.urdf",
+                   [-1, 4, .5],
                    p.getQuaternionFromEuler([0, 0, 0]),
                    useFixedBase=True,
                    physicsClientId=self.CLIENT
                    )
 
-        kuka = KUKASAKE(p, [2, 2, .5],
+        kuka1 = KUKASAKE(p, [-1, 2, .5],
                         p.getQuaternionFromEuler([0, 0, 0]))
-        robot_id = kuka.robot_id
+        kuka1_id = kuka1.robot_id
+
+        kuka2 = KUKASAKE(p, [-1, 4, .5],
+                        p.getQuaternionFromEuler([0, 0, 0]))
+        kuka2_id = kuka2.robot_id
     
         obstacles_id = [
-            samurai_id,
-            duck_id,
-            cube_id,
             sphere_id,
-            table_id,
-            robot_id
+
+            cube1_id,
+            cube2_id,
+            cube3_id,
+            cube4_id,
+            cube5_id,
+            cube6_id,
+            cube7_id,
+            cube8_id,
+            cube9_id,
+            cube10_id,
+
+            table1_id,
+            table2_id,
+            kuka1_id,
+            kuka2_id
         ]
 
         obstacles = [
-            p.getBasePositionAndOrientation(samurai_id),
-            p.getBasePositionAndOrientation(duck_id),
-            p.getBasePositionAndOrientation(cube_id),
             p.getBasePositionAndOrientation(sphere_id),
-            p.getBasePositionAndOrientation(table_id),
-            p.getBasePositionAndOrientation(robot_id)
+
+            p.getBasePositionAndOrientation(cube1_id),
+            p.getBasePositionAndOrientation(cube2_id),
+            p.getBasePositionAndOrientation(cube3_id),
+            p.getBasePositionAndOrientation(cube4_id),
+            p.getBasePositionAndOrientation(cube5_id),
+            p.getBasePositionAndOrientation(cube6_id),
+            p.getBasePositionAndOrientation(cube7_id),
+            p.getBasePositionAndOrientation(cube8_id),
+            p.getBasePositionAndOrientation(cube9_id),
+            p.getBasePositionAndOrientation(cube10_id),
+
+            p.getBasePositionAndOrientation(table1_id),
+            p.getBasePositionAndOrientation(table2_id),
+            p.getBasePositionAndOrientation(kuka1_id),
+            p.getBasePositionAndOrientation(kuka2_id)
         ]
 
         return obstacles_id, obstacles

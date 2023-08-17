@@ -1,6 +1,6 @@
 """Script demonstrating the ground effect contribution.
 
-The simulation is run by a `CtrlAviary` environment.
+The simulation is run by a `FLabCtrlAviary` environment.
 
 Example
 -------
@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 
 from gym_pybullet_drones.utils.enums import DroneModel, Physics
 from gym_pybullet_drones.envs.CtrlAviary import CtrlAviary
+from gym_pybullet_drones.envs.FLabCtrlAviary import FLabCtrlAviary
 from gym_pybullet_drones.envs.VisionAviary import VisionAviary
 from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
 from gym_pybullet_drones.control.SimplePIDControl import SimplePIDControl
@@ -44,7 +45,7 @@ DEFAULT_RECORD_VIDEO = False
 DEFAULT_PLOT = True
 DEFAULT_USER_DEBUG_GUI = False
 DEFAULT_AGGREGATE = True
-DEFAULT_OBSTACLES = False
+DEFAULT_OBSTACLES = True
 DEFAULT_SIMULATION_FREQ_HZ = 240
 DEFAULT_CONTROL_FREQ_HZ = 240
 DEFAULT_DURATION_SEC = 8
@@ -105,7 +106,7 @@ def run(
     wp_counter = 0
 
     #### Create the environment ################################
-    env = CtrlAviary(drone_model=drone,
+    env = FLabCtrlAviary(drone_model=drone,
                      num_drones=num_drones,
                      initial_xyzs=INIT_XYZ,
                      physics=physics,
