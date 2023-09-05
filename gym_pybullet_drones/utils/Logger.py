@@ -376,7 +376,7 @@ class Logger(object):
         #### Acceleration ##########################################
         col = 2
         row = 0
-        drone_weight = 0.042
+        drone_weight = 0.0316
         total_energy = np.zeros(self.NUM_DRONES)
 
         for j in range(self.NUM_DRONES):
