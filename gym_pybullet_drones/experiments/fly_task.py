@@ -61,7 +61,7 @@ DEFAULT_DEST_POS = [1, 1, 1]
 """
 DUMMY = 'none'
 RRT = 'rrt'
-PP = 'pp'
+MPC = 'mpc'
 DEFAULT_COLLISION_AVOIDANCE = RRT
 
 # Debug boolens

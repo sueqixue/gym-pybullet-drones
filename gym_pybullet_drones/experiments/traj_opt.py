@@ -22,7 +22,7 @@ from rrt_drones import *
 """
 DUMMY = 'none'
 RRT = 'rrt'
-PP = 'pp'
+MPC = 'mpc'
 
 # Debug boolens
 PRINTING = False

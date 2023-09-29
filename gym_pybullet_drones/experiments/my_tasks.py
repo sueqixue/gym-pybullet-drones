@@ -20,7 +20,7 @@ from fly_task import *
 """
 DUMMY = 'none'
 RRT = 'rrt'
-PP = 'pp'
+MPC = 'mpc'
 
 """
 run_fly_task(
