@@ -14,6 +14,7 @@ Implemented by Qi Xue (qixue@seas.upenn.edu).
 import numpy as np
 from copy import deepcopy
 from rrt_drones import * 
+from mpc_drones import * 
 
 """ Collision avoidance algorithms
         none - dummy trajectory
@@ -141,6 +142,14 @@ def traj_opt(
                     if RRT_PRINTING:
                         if sec_index+j % 100 == 0:
                             print(f"smooth_task_path[{sec_index+j}] = {smooth_task_path[sec_index+j]}")
+    elif collision_avoidance == 'mpc':
+        print(f"\n---------- MPC ----------\n")
+        task_path = mpc(deepcopy(env), deepcopy(task_start), deepcopy(task_goal), NUM_WP_TASK)
+        task_path_len = len(task_path)
+        if PRINTING:
+            print(f"task_path = {task_path}")
+            print(f"RRT path length = {task_path_len}")
+            print(f"RRT path shape = {task_path.shape}")
 
     #### Fly Task ###########################################################
     if GROUND_EFFECT:
