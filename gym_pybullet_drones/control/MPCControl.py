@@ -5,6 +5,11 @@ import pkg_resources
 
 from gym_pybullet_drones.utils.enums import DroneModel
 
+import numpy as np
+import control
+import cvxpy as cp
+from math import sin as s, cos as c, atan2
+
 class MPCControl(BaseControl):
     """MPC class for control.
 
@@ -98,6 +103,25 @@ class MPCControl(BaseControl):
         rpm = [0, 0, 0, 0]
         pos_e = [0, 0, 0]
         self.control_counter += 1
+
+        x_pos = cur_pos[0]
+        y_pos = cur_pos[1]
+        z_pos = cur_pos[2]
+        x_vel = cur_vel[0]
+        y_vel = cur_vel[1]
+        z_vel = cur_vel[2]
+        roll  = cur_quat[0]
+        pitch = cur_quat[1]
+        yaw   = cur_quat[2]
+        roll_rate  = cur_ang_vel[0]
+        pitch_rate = cur_ang_vel[1]
+        yaw_rate   = cur_ang_vel[2]
+
+
+
+        xr = np.array([des_states['roll'], des_states['pitch'], des_states['yaw'], des_states['roll_dot'],
+                       des_states['pitch_dot'], des_states['yaw_dot'], des_states['x_dot'], des_states['y_dot'],
+                       des_states['x_dot'], ref_x, ref_y, des_states['z']])
 
         thrust, computed_target_rpy, pos_e = self._MPCPositionControl(control_timestep,
                                                                          cur_pos,
