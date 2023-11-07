@@ -32,22 +32,16 @@ class MPCControl(BaseControl):
 
         """
         #### Set general use constants #############################
-        """DroneModel: The type of drone to control."""
-        self.DRONE_MODEL = drone_model
+        super().__init__(drone_model=drone_model, g=g)
+        if self.DRONE_MODEL != DroneModel.CF2X and self.DRONE_MODEL != DroneModel.CF2P:
+            print("[ERROR] in MPCControl.__init__(), MPCControl requires DroneModel.CF2X or DroneModel.CF2P")
+            exit()
         
-        """float: The gravitational force (M*g) acting on each drone."""
         self.g = g
         self.Ix = 1.
         self.Iy = 1.
         self.Iz = 1.5
         self.m = self._getURDFParameter('m')
-        self.GRAVITY = self.g*self.m
-        
-        """float: The coefficient converting RPMs into thrust."""
-        self.KF = self._getURDFParameter('kf')
-        
-        """float: The coefficient converting RPMs into torque."""
-        self.KM = self._getURDFParameter('km')
 
         self.PWM2RPM_SCALE = 0.2685
         self.PWM2RPM_CONST = 4070.3
