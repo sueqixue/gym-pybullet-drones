@@ -1,3 +1,6 @@
+"""---------------------------------------------------------------------
+Figueroa Robotics Lab
+---------------------------------------------------------------------"""
 import os
 import numpy as np
 import xml.etree.ElementTree as etxml
@@ -5,8 +8,10 @@ import pkg_resources
 
 from gym_pybullet_drones.utils.enums import DroneModel
 
-class CBFControl(object):
-    """CBF class for control.
+class CBFXYControl(object):
+    """CBF class for control on xy-planar.
+
+    Modified from https://github.com/penn-figueroa-lab/ros_obstacle_avoidance/tree/main.
 
     """
 
@@ -80,5 +85,21 @@ class CBFControl(object):
         target_rpy_rates : ndarray, optional
             (3,1)-shaped array of floats containing the desired roll, pitch, and yaw rates.
 
+        Returns
+        -------
+        ndarray
+            (4,1)-shaped array of integers containing the RPMs to apply to each of the 4 motors.
+        ndarray
+            (3,1)-shaped array of floats containing the current XYZ position error.
+        float
+            The current yaw error.
+
         """
-        raise NotImplementedError
+        self.control_counter += 1
+        pos_e = target_pos - cur_pos
+
+        computed_target_rpy = [0, 0, 0, 0]
+        rpm = [0, 0, 0, 0]
+
+        cur_rpy = p.getEulerFromQuaternion(cur_quat)
+        return rpm, pos_e, computed_target_rpy[2] - cur_rpy[2]

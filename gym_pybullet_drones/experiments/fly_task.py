@@ -69,7 +69,7 @@ PRINTING = False
 RRT_PRINTING = False
 TP_PRINTING = True
 
-def run_fly_task(
+def run_fly_task_single(
         drone=DEFAULT_DRONES,
         num_drones=DEFAULT_NUM_DRONES,
         physics=DEFAULT_PHYSICS,
@@ -254,7 +254,7 @@ if __name__ == "__main__":
     #### Define and parse (optional) arguments for the script ##
     parser = argparse.ArgumentParser(description='Hover script with or without ground effect using FLabCtrlAviary and DSLPIDControl')
     parser.add_argument('--drone',              default=DEFAULT_DRONES,             type=DroneModel,    help='Drone model (default: CF2X)', metavar='', choices=DroneModel)
-    parser.add_argument('--num_drones',         default=DEFAULT_NUM_DRONES,         type=int,           help='Number of drones (default: 3)', metavar='')
+    # parser.add_argument('--num_drones',         default=DEFAULT_NUM_DRONES,         type=int,           help='Number of drones (default: 3)', metavar='')
     parser.add_argument('--physics',            default=DEFAULT_PHYSICS,            type=Physics,       help='Physics updates (default: PYB)', metavar='', choices=Physics)
     parser.add_argument('--gui',                default=DEFAULT_GUI,                type=str2bool,      help='Whether to use PyBullet GUI (default: True)', metavar='')
     parser.add_argument('--record_video',       default=DEFAULT_RECORD_VIDEO,       type=str2bool,      help='Whether to record a video (default: False)', metavar='')

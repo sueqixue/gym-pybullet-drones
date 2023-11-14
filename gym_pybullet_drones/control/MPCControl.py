@@ -1,3 +1,6 @@
+"""---------------------------------------------------------------------
+Figueroa Robotics Lab
+---------------------------------------------------------------------"""
 import os
 import numpy as np
 import xml.etree.ElementTree as etxml
@@ -12,6 +15,8 @@ from math import sin, cos, atan2
 
 class MPCControl(BaseControl):
     """MPC class for control.
+
+    Modified from https://github.com/TylerReimer13/6DOF_Quadcopter_MPC/tree/main.
 
     """
 
@@ -226,10 +231,7 @@ class MPCControl(BaseControl):
             The current yaw error.
 
         """
-        rpm = [0, 0, 0, 0]
-        pos_e = [0, 0, 0]
         self.control_counter += 1
-
         pos_e = target_pos - cur_pos
 
         x_pos = cur_pos[0]

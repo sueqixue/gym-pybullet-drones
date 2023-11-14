@@ -23,9 +23,9 @@ RRT = 'rrt'
 MPC = 'mpc'
 
 """
-run_fly_task(
+run_fly_task_single(
     -- Drone
-    drone=DEFAULT_DRONES,
+    drone=DEFAULT_DRONES=1,
     num_drones=DEFAULT_NUM_DRONES,
     physics=DEFAULT_PHYSICS,
 
@@ -59,6 +59,6 @@ run_fly_task(
 TEST_TAKE_OFF_ASSIST = True
 
 if TEST_TAKE_OFF_ASSIST:
-    run_fly_task(src_pos=[1.5, 1.5, 1.2], dest_pos=[1.0, 1.0, 2.0], collision_avoidance=RRT)
+    run_fly_task_single(src_pos=[1.5, 1.5, 1.2], dest_pos=[1.0, 1.0, 2.0], collision_avoidance=RRT)
 else:
-    run_fly_task(src_pos=[0.0, 0.0, 0.0], dest_pos=[1.0, 1.0, 2.0], collision_avoidance=RRT)
+    run_fly_task_single(src_pos=[0.0, 0.0, 0.0], dest_pos=[1.0, 1.0, 2.0], collision_avoidance=RRT)
