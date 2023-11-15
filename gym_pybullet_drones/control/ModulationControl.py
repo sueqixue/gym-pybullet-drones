@@ -1,20 +1,17 @@
 """---------------------------------------------------------------------
 Figueroa Robotics Lab
 ---------------------------------------------------------------------"""
-import os
-import time
-import sys
 import numpy as np
 import pybullet as p
+import cvxpy as cp
 import xml.etree.ElementTree as etxml
-import pkg_resources
 
+from gym_pybullet_drones.control.BaseControl import BaseControl
 from gym_pybullet_drones.utils.enums import DroneModel
 
-import cvxpy as cp
 from modulation import obs_avoidance_interpolation_moving
 
-class ModulationXYControl(object):
+class ModulationXYControl(BaseControl):
     """Modulation class for control on xy-planar.
 
     Modified from https://github.com/penn-figueroa-lab/ros_obstacle_avoidance/tree/main.
@@ -64,7 +61,7 @@ class ModulationXYControl(object):
         A general use counter is set to zero.
 
         """
-        self.control_counter = 0
+        super().reset()
 
     ################################################################################
 
@@ -167,6 +164,7 @@ class ModulationXYControl(object):
 
         if np.linalg.norm(vel) > self.speed_thr:
             return self.speed_thr * vel / np.linalg.norm(vel)
+        
         return vel
 
     ################################################################################
@@ -194,10 +192,12 @@ class ModulationXYControl(object):
         -------
         ndarray
             (4,1)-shaped array of integers containing the RPMs to apply to each of the 4 motors.
+        float
+            The target yaw rate (angular velocity).
         ndarray
             (3,1)-shaped array of floats containing the current XYZ position error.
         float
-            The current yaw error.
+            The traget yaw value.
 
         """
 
@@ -207,7 +207,7 @@ class ModulationXYControl(object):
 				position = np.array(cur_pos_xy),
 				initial_velocity = u_nom,
 				Gamma = self._h(cur_pos_xy, obst_pos_xy, obst_orit, convex=self.convex) +1,
-				dhdx = self._grad_x_h(cur_pos_xy, obst_pos_xy, obst_orit, convex=self.convex, return_rel=False),
+				dhdx = self._grad_pos_h(cur_pos_xy, obst_pos_xy, obst_orit, convex=self.convex, return_rel=False),
 				obs_vel = obst_vel_xy,
 				obs_angular_velocity = obst_ang_vel,
 				obs_center = obst_pos_xy,
@@ -277,7 +277,6 @@ class ModulationXYControl(object):
             print("[ERROR] in ModulationXYControl.computeControl(), ModulationXYControl only works for xy-planar control")
             exit()
 
-        
         self.control_counter += 1
         cur_rpy = p.getEulerFromQuaternion(cur_quat)
 
