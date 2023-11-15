@@ -1,20 +1,17 @@
 """---------------------------------------------------------------------
 Figueroa Robotics Lab
 ---------------------------------------------------------------------"""
-import os
+import control
 import numpy as np
-import xml.etree.ElementTree as etxml
-import pkg_resources
+import pybullet as p
+import cvxpy as cp
+from math import sin, cos
 
+from gym_pybullet_drones.control.BaseControl import BaseControl
 from gym_pybullet_drones.utils.enums import DroneModel
 
-import numpy as np
-import control
-import cvxpy as cp
-from math import sin, cos, atan2
-
 class MPCControl(BaseControl):
-    """MPC class for control.
+    """MPC class for control on xyz 3D space.
 
     Modified from https://github.com/TylerReimer13/6DOF_Quadcopter_MPC/tree/main.
 
@@ -78,15 +75,28 @@ class MPCControl(BaseControl):
         self.A_zoh = np.eye(12)
         self.B_zoh = np.zeros((12, 4))
 
+        INF = np.inf
+        self.xmin = np.array([-0.2, -0.2, -2*np.pi, -.25, -.25, -.25,  -INF,  -INF,  -INF, -INF, -INF, -INF])
+        self.xmax = np.array([0.2,  0.2,   2*np.pi,  .25, .25,  .25,   INF,   INF,   INF,   INF,  INF, INF])
+
         self.states = np.array([self.roll, self.pitch, self.yaw, self.roll_rate, self.pitch_rate, self.yaw_rate,
                                 self.x_vel, self.y_vel, self.z_vel, self.x_pos, self.y_pos, self.z_pos]).T
 
         self.reset()
 
     ################################################################################
+
+    def reset(self):
+        """Reset the control classes.
+
+        A general use counter is set to zero.
+
+        """
+        super().reset()
+
+    ################################################################################
     
-    @property
-    def A(self):
+    def _A(self):
         """ Linear state transition matrix
         """
         A = np.zeros((12, 12))
@@ -102,8 +112,7 @@ class MPCControl(BaseControl):
     
     ################################################################################
     
-    @property
-    def B(self):
+    def _B(self):
         """ Control matrix
         """
         B = np.zeros((12, 4))
@@ -115,22 +124,19 @@ class MPCControl(BaseControl):
 
     ################################################################################
     
-    @property
-    def C(self):
+    def _C(self):
         C = np.eye(12)
         return C
 
     ################################################################################
     
-    @property
-    def D(self):
+    def _D(self):
         D = np.zeros((12, 4))
         return D
 
     ################################################################################
     
-    @property
-    def Q(self):
+    def _Q(self):
         # State cost
         Q = np.eye(12)
         Q[8, 8] = 5.  # z vel
@@ -140,16 +146,15 @@ class MPCControl(BaseControl):
         return Q
 
     ################################################################################
-    
-    @property
-    def R(self):
+
+    def _R(self):
         # Actuator cost
         R = np.eye(4)*.001
         return R
 
     ################################################################################
     
-    def zoh(self):
+    def _zoh(self):
         """ Convert continuous time dynamics into discrete time
         """
         sys = control.StateSpace(self.A, self.B, self.C, self.D)
@@ -160,28 +165,54 @@ class MPCControl(BaseControl):
 
     ################################################################################
     
-    def run_mpc(self, xr):
-        N = self.N
+    def _run_mpc(self, xr, x, u, x_init):
         cost = 0.
         constr = [x[:, 0] == x_init]
-        for t in range(N):
+
+        for t in range(self.N):
             cost += cp.quad_form(xr - x[:, t], self.Q) + cp.quad_form(u[:, t], self.R)  # Linear Quadratic cost
-            constr += [xmin <= x[:, t], x[:, t] <= xmax]  # State constraints
+            constr += [self.xmin <= x[:, t], x[:, t] <= self.xmax]                      # State constraints
             constr += [x[:, t + 1] == self.A_zoh * x[:, t] + self.B_zoh * u[:, t]]
 
-        cost += cp.quad_form(x[:, N] - xr, self.Q)  # End of trajectory error cost
+        cost += cp.quad_form(x[:, self.N] - xr, self.Q)  # End of trajectory error cost
         problem = cp.Problem(cp.Minimize(cost), constr)
-        return problem
 
+        return problem
+    
     ################################################################################
 
-    def reset(self):
-        """Reset the control classes.
+    def _updateStates(self, ft, tx, ty, tz):
+        roll_ddot = ((self.Iy - self.Iz) / self.Ix) * (self.pitch_rate * self.yaw_rate) + tx / self.Ix
+        pitch_ddot = ((self.Iz - self.Ix) / self.Iy) * (self.roll_rate * self.yaw_rate) + ty / self.Iy
+        yaw_ddot = ((self.Ix - self.Iy) / self.Iz) * (self.roll_rate * self.pitch_rate) + tz / self.Iz
+        x_ddot = -(ft/self.m) * (sin(self.roll) * sin(self.yaw) + cos(self.roll) * cos(self.yaw) * sin(self.pitch))
+        y_ddot = -(ft/self.m) * (cos(self.roll) * sin(self.yaw) * sin(self.pitch) - cos(self.yaw) * sin(self.roll))
+        z_ddot = -1*(self.g - (ft/self.m) * (cos(self.roll) * cos(self.pitch)))
 
-        A general use counter is set to zero.
+        DT = self.DT
 
-        """
-        self.control_counter = 0
+        self.roll_rate += roll_ddot * DT
+        self.roll += self.roll_dot * DT
+
+        self.pitch_rate += pitch_ddot * DT
+        self.pitch += self.pitch_dot * DT
+
+        self.yaw_rate += yaw_ddot * DT
+        self.yaw += self.yaw_dot * DT
+
+        self.x_vel += x_ddot * DT
+        self.x_pos += self.x_dot * DT
+
+        self.y_vel += y_ddot * DT
+        self.y_pos += self.y_dot * DT
+
+        self.z_vel += z_ddot * DT
+        self.z_pos += self.z_dot * DT
+
+        self.states = np.array([self.roll, self.pitch, self.yaw, self.roll_rate, self.pitch_rate, self.yaw_rate,
+                            self.x_vel, self.y_vel, self.z_vel, self.x_pos, self.y_pos, self.z_pos]).T
+
+        return self.states
 
     ################################################################################
 
@@ -251,6 +282,9 @@ class MPCControl(BaseControl):
         y_pos_target = target_pos[1]
         z_pos_target = target_pos[2]
 
+        # Compute A_zoh and B_zoh
+        self._zoh()
+
         # Inital solver states
         x0 = np.array([roll, pitch, yaw, roll_rate, pitch_rate, yaw_rate,
                        x_vel, y_vel, z_vel, x_pos, y_pos, z_pos])
@@ -261,20 +295,20 @@ class MPCControl(BaseControl):
 
         # Convex optimization solver variables
         [nx, nu] = self.B.shape
-        x = cp.Variable((nx, N+1))
-        u = cp.Variable((nu, N))
+        x = cp.Variable((nx, self.N + 1))
+        u = cp.Variable((nu, self.N))
         x_init = cp.Parameter(nx)
 
         # Run optimization for N horizons
-        prob = quad.run_mpc(xr)
+        prob = self._run_mpc(xr, x, u, x_init)
 
         # Solve convex optimization problem
         x_init.value = x0
         prob.solve(solver=cp.OSQP, warm_start=True)
-        x0 = quad.A_zoh.dot(x0) + quad.B_zoh.dot(u[:, 0].value)
+        x0 = self.A_zoh.dot(x0) + self.B_zoh.dot(u[:, 0].value)
 
         thrust = self.GRAVITY
-        target_torque = u[0, 0].value
+        target_torques = u[0, 0].value
         states = self._updateStates(thrust + u[0, 0].value, u[1, 0].value, u[2, 0].value, u[3, 0].value)
 
         computed_target_rpy = states[0:3]
@@ -285,40 +319,4 @@ class MPCControl(BaseControl):
 
         cur_rpy = p.getEulerFromQuaternion(cur_quat)
         return rpm, pos_e, computed_target_rpy[2] - cur_rpy[2]
-
-        ################################################################################
-
-        def _updateStates(self, ft, tx, ty, tz):
-            roll_ddot = ((self.Iy - self.Iz) / self.Ix) * (self.pitch_rate * self.yaw_rate) + tx / self.Ix
-            pitch_ddot = ((self.Iz - self.Ix) / self.Iy) * (self.roll_rate * self.yaw_rate) + ty / self.Iy
-            yaw_ddot = ((self.Ix - self.Iy) / self.Iz) * (self.roll_rate * self.pitch_rate) + tz / self.Iz
-            x_ddot = -(ft/self.m) * (sin(self.roll) * sin(self.yaw) + cos(self.roll) * cos(self.yaw) * sin(self.pitch))
-            y_ddot = -(ft/self.m) * (cos(self.roll) * sin(self.yaw) * sin(self.pitch) - cos(self.yaw) * sin(self.roll))
-            z_ddot = -1*(self.g - (ft/self.m) * (cos(self.roll) * cos(self.pitch)))
-
-            DT = self.DT
-
-            self.roll_rate += roll_ddot * DT
-            self.roll += self.roll_dot * DT
-
-            self.pitch_rate += pitch_ddot * DT
-            self.pitch += self.pitch_dot * DT
-
-            self.yaw_rate += yaw_ddot * DT
-            self.yaw += self.yaw_dot * DT
-
-            self.x_vel += x_ddot * DT
-            self.x_pos += self.x_dot * DT
-
-            self.y_vel += y_ddot * DT
-            self.y_pos += self.y_dot * DT
-
-            self.z_vel += z_ddot * DT
-            self.z_pos += self.z_dot * DT
-
-            self.states = np.array([self.roll, self.pitch, self.yaw, self.roll_rate, self.pitch_rate, self.yaw_rate,
-                                self.x_vel, self.y_vel, self.z_vel, self.x_pos, self.y_pos, self.z_pos]).T
-
-        return states
-
         
