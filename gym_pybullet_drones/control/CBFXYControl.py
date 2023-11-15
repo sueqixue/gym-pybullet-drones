@@ -4,7 +4,6 @@ Figueroa Robotics Lab
 import numpy as np
 import pybullet as p
 import cvxpy as cp
-import xml.etree.ElementTree as etxml
 
 from gym_pybullet_drones.control.BaseControl import BaseControl
 from gym_pybullet_drones.utils.enums import DroneModel
