@@ -84,6 +84,46 @@ class CBFXYControl(BaseControl):
     
     ################################################################################
 
+    def _compute_orientation_subtraction(self, rad_start, rad_end):
+        if abs(rad_start) > np.pi or abs(rad_end) > np.pi:
+            print("orientation reduction error!!")
+
+            while rad_end > np.pi:
+                rad_end = rad_end - 2*np.pi
+            while rad_end < -np.pi:
+                rad_end = rad_end + 2*np.pi
+            while rad_start > np.pi:
+                rad_start = rad_start - 2*np.pi
+            while rad_start < -np.pi:
+                rad_start = rad_start + 2*np.pi
+
+        difference = rad_end - rad_start
+        if abs(difference) > np.pi:
+            difference = -np.sign(difference)*(2*np.pi-abs(difference))
+
+        return difference
+
+    ################################################################################
+
+    def _compute_orientation(self, v_xy, negative_velocity = False):
+        if negative_velocity == True:
+            v_xy = -v_xy
+
+        if v_xy[0]:
+            if v_xy[0] > 0:
+                theta = np.arctan(v_xy[1]/v_xy[0])
+            else:
+                theta = np.pi + np.arctan(v_xy[1]/v_xy[0])
+
+            if theta > np.pi:
+                theta = theta - 2*np.pi
+        else:
+            theta = np.sign(v_xy[1])*np.pi/2
+
+        return theta
+    
+    ################################################################################
+
     def _pos_global_to_relative(self, pos_rob, pos_obst, theta):
         rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
         return rotation_matrix.T @ (pos_rob - pos_obst)
