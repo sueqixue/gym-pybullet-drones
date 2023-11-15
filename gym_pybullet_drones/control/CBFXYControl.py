@@ -53,6 +53,8 @@ class CBFXYControl(BaseControl):
 
         self.last_prob_status = []
 
+        self.reset()
+
     ################################################################################
 
     def reset(self):

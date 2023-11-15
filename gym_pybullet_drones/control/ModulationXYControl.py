@@ -53,6 +53,8 @@ class ModulationXYControl(BaseControl):
         self.c = 0.6
         self.b = 0.02
 
+        self.reset()
+
     ################################################################################
 
     def reset(self):
