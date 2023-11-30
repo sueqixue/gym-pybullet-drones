@@ -27,11 +27,18 @@ from copy import deepcopy
 from traj_opt import *
 
 from gym_pybullet_drones.utils.enums import DroneModel, Physics
+
 from gym_pybullet_drones.envs.CtrlAviary import CtrlAviary
 from gym_pybullet_drones.envs.FLabCtrlAviary import FLabCtrlAviary
 from gym_pybullet_drones.envs.VisionAviary import VisionAviary
+
 from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
 from gym_pybullet_drones.control.SimplePIDControl import SimplePIDControl
+# from gym_pybullet_drones.control.MPCControl import MPCControl
+from gym_pybullet_drones.control.ModulationXYControl import ModulationXYControl
+from gym_pybullet_drones.control.CBFXYControl import CBFXYControl
+
+
 from gym_pybullet_drones.utils.Logger import Logger
 from gym_pybullet_drones.utils.utils import sync, str2bool
 
@@ -122,7 +129,8 @@ def run_fly_task_single(
                     )
 
     #### Initialize the controller #############################
-    ctrl = DSLPIDControl(drone_model=drone)
+    # ctrl = DSLPIDControl(drone_model=drone)
+    ctrl = ModulationXYControl(drone_model=drone, env=env)
 
     #### Initialize a desired trajectory #######################
     TAKEOFF_PERIOD = 8

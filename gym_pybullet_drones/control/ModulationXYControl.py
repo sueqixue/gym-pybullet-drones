@@ -7,7 +7,9 @@ import pybullet as p
 from gym_pybullet_drones.control.BaseControl import BaseControl
 from gym_pybullet_drones.utils.enums import DroneModel
 
-from modulation import obs_avoidance_interpolation_moving
+from .modulation import obs_avoidance_interpolation_moving
+
+DEBUGGING = True
 
 class ModulationXYControl(BaseControl):
     """Modulation class for control on xy-planar.
@@ -20,6 +22,7 @@ class ModulationXYControl(BaseControl):
 
     def __init__(self,
                  drone_model: DroneModel,
+                 env: env,
                  g: float=9.8
                  ):
         """Common control classes __init__ method.
@@ -28,6 +31,7 @@ class ModulationXYControl(BaseControl):
         ----------
         drone_model : DroneModel
             The type of drone to control (detailed in an .urdf file in folder `assets`).
+        env : environment that contains the obstacles listen
         g : float, optional
             The gravitational acceleration in m/s^2.
 
@@ -37,6 +41,8 @@ class ModulationXYControl(BaseControl):
         if self.DRONE_MODEL != DroneModel.CF2X and self.DRONE_MODEL != DroneModel.CF2P:
             print("[ERROR] in ModulationControl.__init__(), ModulationControl requires DroneModel.CF2X or DroneModel.CF2P")
             exit()
+
+        self.env = env
         
         self.dt = 0.02
 
@@ -281,8 +287,15 @@ class ModulationXYControl(BaseControl):
         cur_rpy = p.getEulerFromQuaternion(cur_quat)
 
         # TODO: Create dynamics obstacles list and update lab environment
-        d_obstacles = []
+        d_obstacles = self.env.obstacles_list
         self.d_obst_num = d_obstacles.len()
+        
+        # Debugging
+        if DEBUGGING: 
+            print(d_obstacles[0])
+            print(self.d_obst_num)
+            raise Exception("Stopped for debugging purpose.")
+
         obst_pos = [0, 0, 0]
         obst_orit = 0
         obst_vel = [0, 0, 0]

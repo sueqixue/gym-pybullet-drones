@@ -56,9 +56,9 @@ run_fly_task_single(
     dest_pos=DEFAULT_DEST_POS
     )
 """
-TEST_TAKE_OFF_ASSIST = True
+TEST_TAKE_OFF_ASSIST = False
 
 if TEST_TAKE_OFF_ASSIST:
     run_fly_task_single(src_pos=[1.5, 1.5, 1.2], dest_pos=[1.0, 1.0, 2.0], collision_avoidance=RRT)
 else:
-    run_fly_task_single(src_pos=[0.0, 0.0, 0.0], dest_pos=[1.0, 1.0, 2.0], collision_avoidance=RRT)
+    run_fly_task_single(src_pos=[0.0, 0.0, 0.0], dest_pos=[0.0, 0.0, 2.0], collision_avoidance=RRT)
