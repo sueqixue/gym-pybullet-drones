@@ -61,15 +61,25 @@ DEFAULT_SRC_POS = [0, 0, 0]
 DEFAULT_HOVER_POS = [0, 0, 1]
 DEFAULT_DEST_POS = [1, 1, 1]
 
+""" Control algorithms
+        PID - DSLPIDControl()
+        MOD2D - ModulationXYControl()
+        CBF2D - CBFXYControl()
+"""
+PID = 'pid'
+MOD2D = 'modulationXY'
+CBF2D = 'cbfXY'
+DEFAULT_CONTROL = PID
+
 """ Collision avoidance algorithms
-        none - dummy trajectory
+        none - no static collision avoidance
         rrt - rrt algorithm
         pp - potential field
 """
-DUMMY = 'none'
+NONE = 'none'
 RRT = 'rrt'
 MPC = 'mpc'
-DEFAULT_COLLISION_AVOIDANCE = RRT
+DEFAULT_COLLISION_AVOIDANCE = NONE
 
 # Debug boolens
 PRINTING = False
@@ -95,7 +105,8 @@ def run_fly_task_single(
         collision_avoidance=DEFAULT_COLLISION_AVOIDANCE,
         src_pos=DEFAULT_SRC_POS,
         hover_pos=DEFAULT_HOVER_POS,
-        dest_pos=DEFAULT_DEST_POS
+        dest_pos=DEFAULT_DEST_POS,
+        control=DEFAULT_CONTROL
         ):
 
     #### Initialize the simulation #############################
@@ -107,7 +118,7 @@ def run_fly_task_single(
     #### Create the environment ################################
     env = FLabCtrlAviary(drone_model=drone,
                     num_drones=num_drones,
-                    initial_xyzs=np.array([0, 0, 0]).reshape(1,3),
+                    initial_xyzs=TASK_INIT_XYZ,
                     physics=physics,
                     neighbourhood_radius=10,
                     freq=simulation_freq_hz,
@@ -129,8 +140,12 @@ def run_fly_task_single(
                     )
 
     #### Initialize the controller #############################
-    # ctrl = DSLPIDControl(drone_model=drone)
-    ctrl = ModulationXYControl(drone_model=drone, env=env)
+    if control == 'pid':
+        ctrl = DSLPIDControl(drone_model=drone)
+    elif control == 'modulationXY':
+        ctrl = ModulationXYControl(drone_model=drone, env=env)
+    elif control == 'cbfXY':
+        ctrl =CBFXYControl(drone_model=drone)
 
     #### Initialize a desired trajectory #######################
     TAKEOFF_PERIOD = 8
@@ -146,26 +161,49 @@ def run_fly_task_single(
     drone_sim_origin_pos = drone_origin_pos
     drone_sim_origin_ori = drone_origin_ori
 
-    ASSIST = False
-    if not (TASK_INIT_XYZ == np.array([0, 0, 0]).reshape(1,3)).all():
-        # If the drone need to take off before doing the task, taking it off first
-        print("\nHelp to take off the drone.\n")
-        ASSIST = True
-        TARGET_POS_prep, NUM_WP_prep = traj_opt(INIT_XYZ=np.array([0, 0, 0]).reshape(1,3), 
-                                                HOVER_XYZ=HOVER_XYZ, 
-                                                DEST_XYZ=TASK_INIT_XYZ, 
-                                                drone_origin_pos=drone_origin_pos, 
-                                                drone_origin_ori=drone_origin_ori, 
-                                                env=env,
-                                                GROUND_EFFECT=ground_effect,
-                                                TAKEOFF_PERIOD=TAKEOFF_PERIOD,
-                                                TASK_PERIOD=TASK_PERIOD,
-                                                HOVER_PERIOD=HOVER_PERIOD,
-                                                control_freq_hz=control_freq_hz,
-                                                collision_avoidance=RRT,
-                                                take_off_flag=True)
-        drone_origin_pos, drone_origin_ori = p.getBasePositionAndOrientation(env.DRONE_IDS[0], env.CLIENT)     
+    # ASSIST = False
+    # if not (TASK_INIT_XYZ == np.array([0, 0, 0]).reshape(1,3)).all():
+    #     # If the drone need to take off before doing the task, taking it off first
+    #     print("\nHelp to take off the drone.\n")
+    #     ASSIST = True
+    #     TARGET_POS_prep, NUM_WP_prep = traj_opt(INIT_XYZ=np.array([0, 0, 0]).reshape(1,3), 
+    #                                             HOVER_XYZ=HOVER_XYZ, 
+    #                                             DEST_XYZ=TASK_INIT_XYZ, 
+    #                                             drone_origin_pos=drone_origin_pos, 
+    #                                             drone_origin_ori=drone_origin_ori, 
+    #                                             env=env,
+    #                                             GROUND_EFFECT=ground_effect,
+    #                                             TAKEOFF_PERIOD=TAKEOFF_PERIOD,
+    #                                             TASK_PERIOD=TASK_PERIOD,
+    #                                             HOVER_PERIOD=HOVER_PERIOD,
+    #                                             control_freq_hz=control_freq_hz,
+    #                                             collision_avoidance=RRT,
+    #                                             take_off_flag=True)
+    #     drone_origin_pos, drone_origin_ori = p.getBasePositionAndOrientation(env.DRONE_IDS[0], env.CLIENT)     
 
+    # TARGET_POS, NUM_WP = traj_opt(INIT_XYZ=TASK_INIT_XYZ, 
+    #                             HOVER_XYZ=HOVER_XYZ, 
+    #                             DEST_XYZ=TASK_DEST_XYZ, 
+    #                             drone_origin_pos=drone_origin_pos, 
+    #                             drone_origin_ori=drone_origin_ori, 
+    #                             env=env,
+    #                             GROUND_EFFECT=ground_effect,
+    #                             TAKEOFF_PERIOD=TAKEOFF_PERIOD,
+    #                             TASK_PERIOD=TASK_PERIOD,
+    #                             HOVER_PERIOD=HOVER_PERIOD,
+    #                             control_freq_hz=control_freq_hz,
+    #                             collision_avoidance=RRT,
+    #                             take_off_flag=(not ASSIST))
+    
+    # if ASSIST:
+    #     if PRINTING:
+    #         print(f"\nTARGET_POS_prep.shape = {TARGET_POS_prep.shape}")
+    #         print(f"TARGET_POS_task.shape = {TARGET_POS.shape}")
+    #     p.resetBasePositionAndOrientation(env.DRONE_IDS[0], drone_sim_origin_pos, drone_sim_origin_ori, env.CLIENT)
+    #     TARGET_POS = np.append(TARGET_POS_prep, TARGET_POS, axis = 0)
+    #     NUM_WP += NUM_WP_prep
+
+    # Stop using take off assist since need test the algorithm on XY planar
     TARGET_POS, NUM_WP = traj_opt(INIT_XYZ=TASK_INIT_XYZ, 
                                 HOVER_XYZ=HOVER_XYZ, 
                                 DEST_XYZ=TASK_DEST_XYZ, 
@@ -177,16 +215,8 @@ def run_fly_task_single(
                                 TASK_PERIOD=TASK_PERIOD,
                                 HOVER_PERIOD=HOVER_PERIOD,
                                 control_freq_hz=control_freq_hz,
-                                collision_avoidance=RRT,
-                                take_off_flag=(not ASSIST))
-    
-    if ASSIST:
-        if PRINTING:
-            print(f"\nTARGET_POS_prep.shape = {TARGET_POS_prep.shape}")
-            print(f"TARGET_POS_task.shape = {TARGET_POS.shape}")
-        p.resetBasePositionAndOrientation(env.DRONE_IDS[0], drone_sim_origin_pos, drone_sim_origin_ori, env.CLIENT)
-        TARGET_POS = np.append(TARGET_POS_prep, TARGET_POS, axis = 0)
-        NUM_WP += NUM_WP_prep
+                                collision_avoidance=collision_avoidance,
+                                take_off_flag=False)
     
     if PRINTING:
         print(f"NUM_WP = {NUM_WP}")
@@ -282,6 +312,7 @@ if __name__ == "__main__":
     parser.add_argument('--src_pos',            default=DEFAULT_SRC_POS)
     parser.add_argument('--hover_pos',          default=DEFAULT_HOVER_POS)
     parser.add_argument('--dest_pos',           default=DEFAULT_DEST_POS)
+    parser.add_argument('--control',            default=DEFAULT_CONTROL)
     ARGS = parser.parse_args()
 
-    run_fly_task(**vars(ARGS))
+    run_fly_task_single(**vars(ARGS))

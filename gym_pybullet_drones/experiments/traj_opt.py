@@ -14,14 +14,13 @@ Implemented by Qi Xue (qixue@seas.upenn.edu).
 import numpy as np
 from copy import deepcopy
 from rrt_drones import * 
-from mpc_drones import * 
 
 """ Collision avoidance algorithms
         none - dummy trajectory
         rrt - rrt algorithm
         pp - potential field
 """
-DUMMY = 'none'
+NONE = 'none'
 RRT = 'rrt'
 MPC = 'mpc'
 
@@ -50,7 +49,7 @@ def traj_opt(
         TASK_PERIOD=12,
         HOVER_PERIOD=4,
         control_freq_hz=240,
-        collision_avoidance=RRT,
+        collision_avoidance=NONE,
         take_off_flag=False
         ):
    
@@ -107,49 +106,49 @@ def traj_opt(
     task_goal = DEST_XYZ
     task_path = []
     smooth_task_path = []
-    if collision_avoidance == 'rrt':
+
+    if collision_avoidance == 'none':
+        print(f"\n---------- NONE ----------\n")
+        task_path.append(list(task_start[0]))
+        task_path.append(list(task_goal[0]))
+        task_path = np.array(task_path)
+        task_path_len = len(task_path)
+    elif collision_avoidance == 'rrt':
         print(f"\n---------- RRT ----------\n")
         task_path = rrt(deepcopy(env), deepcopy(task_start), deepcopy(task_goal), NUM_WP_TASK)
         task_path_len = len(task_path)
-        if PRINTING:
-            print(f"task_path = {task_path}")
-            print(f"RRT path length = {task_path_len}")
-            print(f"RRT path shape = {task_path.shape}")
+    
+    if PRINTING:
+        print(f"task_path = {task_path}")
+        print(f"path length = {task_path_len}")
+        print(f"path shape = {task_path.shape}")
         
-        # Smooth the path
-        smooth_task_path = np.zeros((NUM_WP_TASK,3))
+    # Smooth the path
+    smooth_task_path = np.zeros((NUM_WP_TASK,3))
+    if RRT_PRINTING:
+        print(f"smooth_task_path shape is {smooth_task_path.shape}")
+    if task_path_len < NUM_WP_TASK:
+        part_len = NUM_WP_TASK // (task_path_len - 1)
         if RRT_PRINTING:
-            print(f"smooth_task_path shape is {smooth_task_path.shape}")
-        if task_path_len < NUM_WP_TASK:
-            part_len = NUM_WP_TASK // (task_path_len - 1)
+            print(f"part_len = {part_len}\n")
+            
+        for i in range(task_path_len-1):
             if RRT_PRINTING:
-                print(f"part_len = {part_len}\n")
-                
-            for i in range(task_path_len-1):
+                print(f"section {i}:\n")
+            
+            sec_index = i*part_len
+            smooth_task_path[sec_index] = task_path[i]
+            if RRT_PRINTING:
+                print(f"smooth_task_path[{sec_index}] = {smooth_task_path[sec_index]}")
+            
+            for j in range(1, part_len):
+                step_diff_x = (task_path[i+1, 0] - task_path[i, 0]) / part_len
+                step_diff_y = (task_path[i+1, 1] - task_path[i, 1]) / part_len
+                step_diff_z = (task_path[i+1, 2] - task_path[i, 2]) / part_len
+                smooth_task_path[sec_index+j] = smooth_task_path[sec_index+j-1] + [step_diff_x, step_diff_y, step_diff_z]
                 if RRT_PRINTING:
-                    print(f"section {i}:\n")
-                
-                sec_index = i*part_len
-                smooth_task_path[sec_index] = task_path[i]
-                if RRT_PRINTING:
-                    print(f"smooth_task_path[{sec_index}] = {smooth_task_path[sec_index]}")
-                
-                for j in range(1, part_len):
-                    step_diff_x = (task_path[i+1, 0] - task_path[i, 0]) / part_len
-                    step_diff_y = (task_path[i+1, 1] - task_path[i, 1]) / part_len
-                    step_diff_z = (task_path[i+1, 2] - task_path[i, 2]) / part_len
-                    smooth_task_path[sec_index+j] = smooth_task_path[sec_index+j-1] + [step_diff_x, step_diff_y, step_diff_z]
-                    if RRT_PRINTING:
-                        if sec_index+j % 100 == 0:
-                            print(f"smooth_task_path[{sec_index+j}] = {smooth_task_path[sec_index+j]}")
-    elif collision_avoidance == 'mpc':
-        print(f"\n---------- MPC ----------\n")
-        task_path = mpc(deepcopy(env), deepcopy(task_start), deepcopy(task_goal), NUM_WP_TASK)
-        task_path_len = len(task_path)
-        if PRINTING:
-            print(f"task_path = {task_path}")
-            print(f"RRT path length = {task_path_len}")
-            print(f"RRT path shape = {task_path.shape}")
+                    if sec_index+j % 100 == 0:
+                        print(f"smooth_task_path[{sec_index+j}] = {smooth_task_path[sec_index+j]}")
 
     #### Fly Task ###########################################################
     if GROUND_EFFECT:
@@ -164,7 +163,13 @@ def traj_opt(
         # [DEBUG]: Generating the path to the destination without collision avoidance
         print(f"\n---------- DEBUG TRAJ ----------\n")
         for i in range(NUM_WP_TASK):
-            TARGET_POS[i+NUM_WP_TAKEOFF, :] = TARGET_POS[NUM_WP_TAKEOFF-1, 0] + i * (TAKE_OFF_H/NUM_WP_TASK), TARGET_POS[NUM_WP_TAKEOFF-1, 1], TARGET_POS[NUM_WP_TAKEOFF-1, 2]
+            if i < len(smooth_task_path):
+                TARGET_POS[i+NUM_WP_TAKEOFF, :] = smooth_task_path[i]
+            elif len(smooth_task_path) > 0:
+                TARGET_POS[i+NUM_WP_TAKEOFF, :] = smooth_task_path[-1]
+            else:
+                TARGET_POS[i+NUM_WP_TAKEOFF, :] = TARGET_POS[NUM_WP_TAKEOFF-1, :]
+
             if TP_PRINTING:
                 if i % 100 == 0:
                     print(f"TARGET_POS[{i+NUM_WP_TAKEOFF}, :] = {TARGET_POS[i+NUM_WP_TAKEOFF, :]}")

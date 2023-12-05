@@ -50,6 +50,8 @@ class CBFXYControl(BaseControl):
         self.c = 2.7
         self.b = 2
 
+        self.Z_E_THRD = 0.001
+
         self.last_prob_status = []
 
         self.reset()
@@ -352,7 +354,7 @@ class CBFXYControl(BaseControl):
         """
         pos_e = target_pos - cur_pos
 
-        if pos_e[2] != 0:
+        if pos_e[2] > self.Z_E_THRD:
             print("[ERROR] in CBFXYControl.computeControl(), CBFXYControl only works for xy-planar control")
             exit()
         

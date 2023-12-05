@@ -13,12 +13,19 @@ Implemented by Qi Xue (qixue@seas.upenn.edu).
 
 from fly_task import *
 
+""" Control algorithms
+        PID - DSLPIDControl()
+        MOD2D - ModulationXYControl()
+"""
+PID = 'pid'
+MOD2D = 'modulationXY'
+
 """ Collision avoidance algorithms
-        none - dummy trajectory
+        none - no static collision avoidance
         rrt - rrt algorithm
         pp - potential field
 """
-DUMMY = 'none'
+NONE = 'none'
 RRT = 'rrt'
 MPC = 'mpc'
 
@@ -53,12 +60,20 @@ run_fly_task_single(
     collision_avoidance=DEFAULT_COLLISION_AVOIDANCE,
     src_pos=DEFAULT_SRC_POS,
     hover_pos=DEFAULT_HOVER_POS,
-    dest_pos=DEFAULT_DEST_POS
+    dest_pos=DEFAULT_DEST_POS,
+
+    -- Control parameters
+    control=DEFAULT_CONTROL
     )
 """
-TEST_TAKE_OFF_ASSIST = False
 
-if TEST_TAKE_OFF_ASSIST:
-    run_fly_task_single(src_pos=[1.5, 1.5, 1.2], dest_pos=[1.0, 1.0, 2.0], collision_avoidance=RRT)
+STATIC_COLLISION_AVOIDANCE = NONE
+# CNTL = PID
+CNTL = MOD2D
+start  = [0.0, 0.0, 1.0]
+end    = [-1.0, 2.0, 1.0]
+
+if start[2] != 0.0:
+    run_fly_task_single(src_pos=start, dest_pos=end, collision_avoidance=STATIC_COLLISION_AVOIDANCE, control=CNTL)
 else:
-    run_fly_task_single(src_pos=[0.0, 0.0, 0.0], dest_pos=[0.0, 0.0, 2.0], collision_avoidance=RRT)
+    run_fly_task_single(src_pos=start, dest_pos=end, collision_avoidance=STATIC_COLLISION_AVOIDANCE, control=CNTL)

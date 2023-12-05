@@ -1,17 +1,20 @@
 """---------------------------------------------------------------------
 Figueroa Robotics Lab
----------------------------------------------------------------------"""
+-c;--------------------------------------------------------------------"""
 import numpy as np
 import pybullet as p
 
 from gym_pybullet_drones.control.BaseControl import BaseControl
+from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
 from gym_pybullet_drones.utils.enums import DroneModel
+from gym_pybullet_drones.envs.FLabCtrlAviary import FLabCtrlAviary
 
-from .modulation import obs_avoidance_interpolation_moving
+from gym_pybullet_drones.control.dynamic_obstacle_avoidance.avoidance.modulation_3 import obs_avoidance_interpolation_moving
 
 DEBUGGING = True
+DEBUGGING1 = False
 
-class ModulationXYControl(BaseControl):
+class ModulationXYControl(DSLPIDControl):
     """Modulation class for control on xy-planar.
 
     Modified from https://github.com/penn-figueroa-lab/ros_obstacle_avoidance/tree/main.
@@ -22,7 +25,7 @@ class ModulationXYControl(BaseControl):
 
     def __init__(self,
                  drone_model: DroneModel,
-                 env: env,
+                 env: FLabCtrlAviary,
                  g: float=9.8
                  ):
         """Common control classes __init__ method.
@@ -43,6 +46,8 @@ class ModulationXYControl(BaseControl):
             exit()
 
         self.env = env
+
+        self.control_timestep = 0
         
         self.dt = 0.02
 
@@ -56,6 +61,8 @@ class ModulationXYControl(BaseControl):
         self.margin = 0.7
         self.c = 0.6
         self.b = 0.02
+
+        self.Z_E_THRD = 0.001
 
         self.reset()
 
@@ -212,7 +219,7 @@ class ModulationXYControl(BaseControl):
         velocity, _= obs_avoidance_interpolation_moving(
 				position = np.array(cur_pos_xy),
 				initial_velocity = u_nom,
-				Gamma = self._h(cur_pos_xy, obst_pos_xy, obst_orit, convex=self.convex) +1,
+				Gamma = self._h(cur_pos_xy, obst_pos_xy, obst_orit, convex=self.convex) + 1,
 				dhdx = self._grad_pos_h(cur_pos_xy, obst_pos_xy, obst_orit, convex=self.convex, return_rel=False),
 				obs_vel = obst_vel_xy,
 				obs_angular_velocity = obst_ang_vel,
@@ -277,34 +284,84 @@ class ModulationXYControl(BaseControl):
             The current yaw error.
 
         """
+        self.control_timestep = control_timestep
         pos_e = target_pos - cur_pos
+        if DEBUGGING:
+            print(f"pos_e({pos_e}) = target_pos({target_pos}) - cur_pos({cur_pos})")
 
-        if pos_e[2] != 0:
+        if pos_e[2] > self.Z_E_THRD:
             print("[ERROR] in ModulationXYControl.computeControl(), ModulationXYControl only works for xy-planar control")
-            exit()
+            # exit()
 
         self.control_counter += 1
-        cur_rpy = p.getEulerFromQuaternion(cur_quat)
 
-        # TODO: Create dynamics obstacles list and update lab environment
+        # TODO: Create dynamics obstacles and update lab environment
         d_obstacles = self.env.obstacles_list
-        self.d_obst_num = d_obstacles.len()
+        self.d_obst_num = len(d_obstacles)
         
         # Debugging
-        if DEBUGGING: 
-            print(d_obstacles[0])
-            print(self.d_obst_num)
-            raise Exception("Stopped for debugging purpose.")
+        if DEBUGGING1: 
+            print(f"d_obstacles = {d_obstacles}")
+            print(f"d_obst_num = {self.d_obst_num}")
 
-        obst_pos = [0, 0, 0]
-        obst_orit = 0
-        obst_vel = [0, 0, 0]
-        obst_ang_vel = 0
-        
-        velocity, angular_velocity, _, computed_target_yaw = self._(cur_pos[0:2], cur_rpy[2], obst_pos[0:2], obst_orit, obst_vel[0:2], obst_ang_vel, target_pos[0:2])
+        obst_pos = []
+        obst_orit = []
+        for i in range(self.d_obst_num):
+            obst_pos.append(np.array(d_obstacles[i][0]))
+            obst_orit.append(np.array(d_obstacles[i][1]))
+
+        obst_pos = np.array(obst_pos)
+        obst_orit = np.array(obst_orit)
+        obst_vel = np.zeros((self.d_obst_num, 3))
+        obst_ang_vel = np.zeros(self.d_obst_num)
+
+        if DEBUGGING1: 
+            print(f"obst_pos = {obst_pos}")
+            print(f"obst_orit = {obst_orit}")
+            print(f"obst_vel = {obst_vel}")
+            print(f"obst_ang_vel = {obst_ang_vel}")
+            print("\n")
+
+            print(cur_pos[0:2])
+            print(cur_quat[2])
+            print(obst_pos[:, 0:2])
+            print(obst_orit[:, 2])
+            print(obst_vel[:, 0:2])
+            print(obst_ang_vel)
+            print(target_pos[0:2])
+            print("\n")
+
+        velocity, angular_velocity, _, computed_target_yaw = self._modulationXY(cur_pos[0:2], cur_quat[2], obst_pos[:, 0:2], obst_orit[:, 2], obst_vel[:, 0:2], obst_ang_vel, target_pos[0:2])
 
         # TODO: Need to use the velocity and angular_velocity as input of PID to
         # calculate the thrust and rpm. See https://github.com/KevinHuang8/DATT/blob/main/controllers/pid_controller.py
-        rpm = [0, 0, 0, 0]
+        if DEBUGGING: 
+            print(f"velocity = {velocity}")
+            print(f"angular_velocity = {angular_velocity}")
+            print(f"computed_target_yaw = {computed_target_yaw}")
 
+        # Low level PID control
+        calcluated_rpy = [0, 0, computed_target_yaw]
+        vx = velocity
+        vy = velocity
+        calcluated_vel = [vx, vy, 0]
+
+        thrust, computed_target_rpy, pos_e = self._dslPIDPositionControl(
+                               control_timestep=self.control_timestep,
+                               cur_pos=cur_pos,
+                               cur_quat=cur_quat,
+                               cur_vel=cur_vel,
+                               target_pos=target_pos,
+                               target_rpy=calcluated_rpy,
+                               target_vel=calcluated_vel
+                               )
+        
+        rpm = self._dslPIDAttitudeControl(control_timestep = self.control_timestep,
+                                          thrust=thrust,
+                                          cur_quat=cur_quat,
+                                          target_euler=computed_target_rpy,
+                                          target_rpy_rates=np.zeros(3)
+                                          )
+        
+        cur_rpy = p.getEulerFromQuaternion(cur_quat)
         return rpm, pos_e, computed_target_yaw - cur_rpy[2]

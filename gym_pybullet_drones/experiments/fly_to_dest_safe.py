@@ -63,7 +63,7 @@ DEFAULT_COLLISION_AVOIDANCE = RRT
 # Debug boolens
 PRINTING = False
 RRT_PRINTING = False
-TP_PRINTING = True
+TP_PRINTING = False
 
 def run(
         drone=DEFAULT_DRONES,
@@ -85,9 +85,9 @@ def run(
         ):
 
     #### Initialize the simulation #############################
-    INIT_XYZ = np.array([0, 0, 0]).reshape(1,3)
+    INIT_XYZ = np.array([0, 0, 0.5]).reshape(1,3)
     HOVER_XYZ = np.array([0, 0, 1]).reshape(1,3)
-    DEST_XYZ = np.array([1, 1, 1]).reshape(1,3)
+    DEST_XYZ = np.array([1, 1, 1.5]).reshape(1,3)
     AGGR_PHY_STEPS = int(simulation_freq_hz/control_freq_hz) if aggregate else 1
 
     #### Create the environment ################################
