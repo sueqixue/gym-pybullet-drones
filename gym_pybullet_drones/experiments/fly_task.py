@@ -146,9 +146,9 @@ def run_fly_task_single(
     elif control == 'modulationXY':
         ctrl = ModulationXYControl(drone_model=drone, env=env)
     elif control == 'cbfXY':
-        ctrl =CBFXYControl(drone_model=drone)
+        ctrl = CBFXYControl(drone_model=drone)
 
-    #### Initialize a desired trajectory #######################
+    #### Drone Desired Trajectory ##############################
     TAKEOFF_PERIOD = 8
     TASK_PERIOD = 12
     HOVER_PERIOD = 4
@@ -203,7 +203,7 @@ def run_fly_task_single(
         p.resetBasePositionAndOrientation(env.DRONE_IDS[0], drone_sim_origin_pos, drone_sim_origin_ori, env.CLIENT)
         TARGET_POS = np.append(TARGET_POS_prep, TARGET_POS, axis = 0)
         NUM_WP += NUM_WP_prep
-
+ 
     if PRINTING:
         print(f"NUM_WP = {NUM_WP}")
         print(f"ENV_TOTAL_WP = {ENV_TOTAL_WP}")
@@ -224,9 +224,22 @@ def run_fly_task_single(
         print(f"\nTARGET_POS.shape = {TARGET_POS.shape}")
         print(f"NUM_WP = {NUM_WP}")
 
+    #### Dynamic Obstacles #####################################
+    num_dy_obstacles = 2
+    H = .1
+    H_STEP = .05
+    R = .3
+    INIT_XYZS_OBS = np.array([[R*np.cos((i/6)*2*np.pi+np.pi/2), R*np.sin((i/6)*2*np.pi+np.pi/2)-R, H+i*H_STEP] for i in range(num_dy_obstacles)])
+    INIT_RPYS_OBS  = np.array([[0, 0,  i * (np.pi/2)/num_dy_obstacles] for i in range(num_dy_obstacles)])
+
+    # Circular motion
+    TARGET_POS_OBS = np.zeros((NUM_WP,3))
+    for i in range(NUM_WP):
+        TARGET_POS_OBS[i, :] = R*np.cos((i/NUM_WP)*(2*np.pi)+np.pi/2)+INIT_XYZS_OBS[0, 0], R*np.sin((i/NUM_WP)*(2*np.pi)+np.pi/2)-R+INIT_XYZS_OBS[0, 1], 0
+ 
+    #### Run the simulation ####################################
     wp_counter = 0
 
-    #### Run the simulation ####################################
     CTRL_EVERY_N_STEPS = int(np.floor(env.SIM_FREQ/control_freq_hz))
     action = {"0": np.array([0,0,0,0])}
     START = time.time()
