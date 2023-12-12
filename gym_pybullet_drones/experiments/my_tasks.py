@@ -11,7 +11,7 @@ Notes       Let the drone do some tasks in designed order.
 Implemented by Qi Xue (qixue@seas.upenn.edu).
 ---------------------------------------------------------------------"""
 
-from fly_task import *
+from fly_task import run_fly_task_single
 
 """ Control algorithms
         PID - DSLPIDControl()
@@ -66,14 +66,11 @@ run_fly_task_single(
     control=DEFAULT_CONTROL
     )
 """
+CNTL = PID
+# CNTL = MOD2D
+STATIC_COLLISION_AVOIDANCE = RRT
 
-STATIC_COLLISION_AVOIDANCE = NONE
-# CNTL = PID
-CNTL = MOD2D
-start  = [0.0, 0.0, 1.0]
-end    = [-1.0, 2.0, 1.0]
+start  = [-1.0, -0.5, 0.7]
+end    = [1.0, 2.0, 1.0]
 
-if start[2] != 0.0:
-    run_fly_task_single(src_pos=start, dest_pos=end, collision_avoidance=STATIC_COLLISION_AVOIDANCE, control=CNTL)
-else:
-    run_fly_task_single(src_pos=start, dest_pos=end, collision_avoidance=STATIC_COLLISION_AVOIDANCE, control=CNTL)
+run_fly_task_single(src_pos=start, dest_pos=end, collision_avoidance=STATIC_COLLISION_AVOIDANCE, control=CNTL)

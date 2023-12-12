@@ -391,6 +391,7 @@ class Logger(object):
             axs[row, col].plot(t, ax, label="drone_"+str(j))
             axs[row+3, col].plot(t, ex, label="drone_"+str(j))
             total_energy[j] += np.sum(ex)
+
         axs[row, col].set_xlabel('time')
         axs[row, col].set_ylabel('ax (m/s^2)')
         axs[row+3, col].set_xlabel('time')
@@ -412,7 +413,7 @@ class Logger(object):
         axs[row, col].set_xlabel('time')
         axs[row, col].set_ylabel('ay (m/s^2)')
         axs[row+3, col].set_xlabel('time')
-        axs[row+3, col].set_ylabel('px (J)')
+        axs[row+3, col].set_ylabel('py (J)')
 
         row = 2
         for j in range(self.NUM_DRONES):
@@ -431,7 +432,7 @@ class Logger(object):
         axs[row, col].set_xlabel('time')
         axs[row, col].set_ylabel('az (m/s^2)')
         axs[row+3, col].set_xlabel('time')
-        axs[row+3, col].set_ylabel('px (J)')
+        axs[row+3, col].set_ylabel('pz (J)')
 
         #### Drawing options #######################################
         for i in range (10):
@@ -450,7 +451,8 @@ class Logger(object):
 
         # Show total_energy
         for j in range(self.NUM_DRONES):
-            msg = "[Drone " + str(j) + "] TOTAL ENERGY CONSUMPTION = " + str(total_energy[j]) + " J"
+            msg = "[Drone " + str(j) + "] TOTAL ENERGY CONSUMPTION = " + str(total_energy[j]) + " J\n [Drone " \
+                    + str(j) + "] AVRGE ENERGY CONSUMPTION = " + str(total_energy[j] / t[-1]) + " J"
             if self.NUM_DRONES == 1:
                 txt_height = .09
             else:
