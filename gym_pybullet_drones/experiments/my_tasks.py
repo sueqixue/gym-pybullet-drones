@@ -18,7 +18,9 @@ from fly_task import run_fly_task_single
         MOD2D - ModulationXYControl()
 """
 PID = 'pid'
+MPC = 'mpc'
 MOD2D = 'modulationXY'
+CBF2D = 'cbfXY'
 
 """ Collision avoidance algorithms
         none - no static collision avoidance
@@ -27,7 +29,6 @@ MOD2D = 'modulationXY'
 """
 NONE = 'none'
 RRT = 'rrt'
-MPC = 'mpc'
 
 """
 run_fly_task_single(
@@ -66,11 +67,13 @@ run_fly_task_single(
     control=DEFAULT_CONTROL
     )
 """
-CNTL = PID
+# CNTL = PID
 # CNTL = MOD2D
-STATIC_COLLISION_AVOIDANCE = RRT
+CNTL = CBF2D
+# STATIC_COLLISION_AVOIDANCE = RRT
+STATIC_COLLISION_AVOIDANCE = NONE
 
-start  = [-1.0, -0.5, 0.7]
+start  = [-1.0, -0.5, .7]
 end    = [1.0, 2.0, 1.0]
 
 run_fly_task_single(src_pos=start, dest_pos=end, collision_avoidance=STATIC_COLLISION_AVOIDANCE, control=CNTL)

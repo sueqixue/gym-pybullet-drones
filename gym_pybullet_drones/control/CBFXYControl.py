@@ -1,14 +1,21 @@
 """---------------------------------------------------------------------
 Figueroa Robotics Lab
 ---------------------------------------------------------------------"""
+import math
 import numpy as np
 import pybullet as p
 import cvxpy as cp
 
-from gym_pybullet_drones.control.BaseControl import BaseControl
 from gym_pybullet_drones.utils.enums import DroneModel
+from gym_pybullet_drones.envs.FLabCtrlAviary import FLabCtrlAviary
 
-class CBFXYControl(BaseControl):
+from gym_pybullet_drones.control.BaseControl import BaseControl
+from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
+
+DEBUGGING = True
+DEBUGGING1 = False
+
+class CBFXYControl(DSLPIDControl):
     """CBF class for control on xy-planar.
 
     Modified from https://github.com/penn-figueroa-lab/ros_obstacle_avoidance/tree/main.
@@ -19,6 +26,7 @@ class CBFXYControl(BaseControl):
 
     def __init__(self,
                  drone_model: DroneModel,
+                 env: FLabCtrlAviary,
                  g: float=9.8
                  ):
         """Common control classes __init__ method.
@@ -27,6 +35,7 @@ class CBFXYControl(BaseControl):
         ----------
         drone_model : DroneModel
             The type of drone to control (detailed in an .urdf file in folder `assets`).
+        env : environment that contains the obstacles listen
         g : float, optional
             The gravitational acceleration in m/s^2.
 
@@ -36,6 +45,8 @@ class CBFXYControl(BaseControl):
         if self.DRONE_MODEL != DroneModel.CF2X and self.DRONE_MODEL != DroneModel.CF2P:
             print("[ERROR] in CBFXYControl.__init__(), CBFXYControl requires DroneModel.CF2X or DroneModel.CF2P")
             exit()
+        
+        self.env = env
         
         self.dt = 0.02
 
@@ -68,17 +79,17 @@ class CBFXYControl(BaseControl):
     
     ################################################################################
 
-    def f():
+    def _f(self):
         return np.zeros([2,1])
     
     ################################################################################
 
-    def g():
+    def _g(self):
         return np.eye(2)
     
     ################################################################################
 
-    def alpha(x):
+    def _alpha(self, x):
         """ larger alpha means larger safety boundary as well as more dramatic
             reaction, could lead to bounding back and stop sometimes
         """
@@ -290,14 +301,16 @@ class CBFXYControl(BaseControl):
 
         velocity, _ = self._safe_ctrl(cur_pos_xy, obst_pos_xy, obst_orit, obst_vel_xy, obst_ang_vel, u_nom)
         position = velocity*self.dt + cur_pos_xy
+        if DEBUGGING1:
+            print(f"velocity={velocity}, position={position}")
 
         if (self._h(cur_pos_xy, obst_pos_xy, obst_orit, convex=self.convex) < 0).any():
-            velocity = cur_vel_xy[0]**2 + cur_vel_xy[1]**2
+            velocity = np.array([cur_vel_xy[0]**2, cur_vel_xy[1]**2])
 
         target_yaw_pos = self._compute_orientation(velocity, negative_velocity = False)
         target_yaw_neg = self._compute_orientation(velocity, negative_velocity = True)
-        rob_ang_velocity_pos = self._compute_orientation_subtraction(cur_yaw, target_yaw_pos)/self.dt
-        rob_ang_velocity_neg = self._compute_orientation_subtraction(cur_yaw, target_yaw_neg)/self.dt
+        rob_ang_velocity_pos = self._compute_orientation_subtraction(cur_yaw, target_yaw_pos) / self.dt
+        rob_ang_velocity_neg = self._compute_orientation_subtraction(cur_yaw, target_yaw_neg) / self.dt
 
         rob_ang_vel = rob_ang_velocity_pos
         rob_vel = np.linalg.norm(velocity)
@@ -352,27 +365,85 @@ class CBFXYControl(BaseControl):
             The current yaw error.
 
         """
+        self.control_timestep = control_timestep
         pos_e = target_pos - cur_pos
+        if DEBUGGING:
+            print(f"pos_e({pos_e}) = target_pos({target_pos}) - cur_pos({cur_pos})")
 
         if pos_e[2] > self.Z_E_THRD:
             print("[ERROR] in CBFXYControl.computeControl(), CBFXYControl only works for xy-planar control")
-            exit()
+            # exit()
         
         self.control_counter += 1
-        cur_rpy = p.getEulerFromQuaternion(cur_quat)
 
-        # TODO: Create dynamics obstacles list and update lab environment
-        d_obstacles = []
-        self.d_obst_num = d_obstacles.len()
-        obst_pos = [0, 0, 0]
-        obst_orit = 0
-        obst_vel = [0, 0, 0]
-        obst_ang_vel = 0
+        # TODO: Create dynamics obstacles and update lab environment
+        d_obstacles = self.env.obstacles_list
+        self.d_obst_num = len(d_obstacles)
         
-        velocity, angular_velocity, _, computed_target_yaw = self._CBFXY(cur_pos[0:2], cur_vel[0:2], cur_rpy[2], obst_pos[0:2], obst_orit, obst_vel[0:2], obst_ang_vel, target_pos[0:2])
+        # Debugging
+        if DEBUGGING1: 
+            print(f"d_obstacles = {d_obstacles}")
+            print(f"d_obst_num = {self.d_obst_num}")
+
+        obst_pos = []
+        obst_orit = []
+        for i in range(self.d_obst_num):
+            obst_pos.append(np.array(d_obstacles[i][0]))
+            obst_orit.append(np.array(d_obstacles[i][1]))
+
+        obst_pos = np.array(obst_pos)
+        obst_orit = np.array(obst_orit)
+        obst_vel = np.zeros((self.d_obst_num, 3))
+        obst_ang_vel = np.zeros(self.d_obst_num)
+
+        if DEBUGGING1: 
+            print(f"obst_pos = {obst_pos}")
+            print(f"obst_orit = {obst_orit}")
+            print(f"obst_vel = {obst_vel}")
+            print(f"obst_ang_vel = {obst_ang_vel}")
+            print("\n")
+
+            print(cur_pos[0:2])
+            print(cur_quat[2])
+            print(obst_pos[:, 0:2])
+            print(obst_orit[:, 2])
+            print(obst_vel[:, 0:2])
+            print(obst_ang_vel)
+            print(target_pos[0:2])
+            print("\n")
+        
+        velocity, angular_velocity, _, computed_target_yaw = self._CBFXY(cur_pos[0:2], cur_vel[0:2], cur_quat[2], obst_pos[:, 0:2], obst_orit[:, 2], obst_vel[:, 0:2], obst_ang_vel, target_pos[0:2])
 
         # TODO: Need to use the velocity and angular_velocity as input of PID to
         # calculate the thrust and rpm. See https://github.com/KevinHuang8/DATT/blob/main/controllers/pid_controller.py
-        rpm = [0, 0, 0, 0]
+        if DEBUGGING1: 
+            print(f"velocity = {velocity}")
+            print(f"angular_velocity = {angular_velocity}")
+            print(f"computed_target_yaw = {computed_target_yaw}")
 
+        # Low level PID control
+        calcluated_rpy = [0, 0, computed_target_yaw]
+        rot_angle = angular_velocity * self.dt
+        vx = velocity * math.cos(rot_angle)
+        vy = velocity * math.sin(rot_angle)
+        calcluated_vel = [vx, vy, 0]
+
+        thrust, computed_target_rpy, pos_e = self._dslPIDPositionControl(
+                               control_timestep=self.control_timestep,
+                               cur_pos=cur_pos,
+                               cur_quat=cur_quat,
+                               cur_vel=cur_vel,
+                               target_pos=target_pos,
+                               target_rpy=calcluated_rpy,
+                               target_vel=calcluated_vel
+                               )
+        
+        rpm = self._dslPIDAttitudeControl(control_timestep = self.control_timestep,
+                                          thrust=thrust,
+                                          cur_quat=cur_quat,
+                                          target_euler=computed_target_rpy,
+                                          target_rpy_rates=np.zeros(3)
+                                          )
+        
+        cur_rpy = p.getEulerFromQuaternion(cur_quat)
         return rpm, pos_e, computed_target_yaw - cur_rpy[2]

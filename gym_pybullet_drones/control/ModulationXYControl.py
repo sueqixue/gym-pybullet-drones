@@ -1,13 +1,15 @@
 """---------------------------------------------------------------------
 Figueroa Robotics Lab
 -c;--------------------------------------------------------------------"""
+import math
 import numpy as np
 import pybullet as p
 
-from gym_pybullet_drones.control.BaseControl import BaseControl
-from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
 from gym_pybullet_drones.utils.enums import DroneModel
 from gym_pybullet_drones.envs.FLabCtrlAviary import FLabCtrlAviary
+
+from gym_pybullet_drones.control.BaseControl import BaseControl
+from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
 
 from gym_pybullet_drones.control.dynamic_obstacle_avoidance.avoidance.modulation_3 import obs_avoidance_interpolation_moving
 
@@ -335,15 +337,16 @@ class ModulationXYControl(DSLPIDControl):
 
         # TODO: Need to use the velocity and angular_velocity as input of PID to
         # calculate the thrust and rpm. See https://github.com/KevinHuang8/DATT/blob/main/controllers/pid_controller.py
-        if DEBUGGING: 
+        if DEBUGGING1: 
             print(f"velocity = {velocity}")
             print(f"angular_velocity = {angular_velocity}")
             print(f"computed_target_yaw = {computed_target_yaw}")
 
         # Low level PID control
         calcluated_rpy = [0, 0, computed_target_yaw]
-        vx = velocity
-        vy = velocity
+        rot_angle = angular_velocity * self.dt
+        vx = velocity * math.cos(rot_angle)
+        vy = velocity * math.sin(rot_angle)
         calcluated_vel = [vx, vy, 0]
 
         thrust, computed_target_rpy, pos_e = self._dslPIDPositionControl(

@@ -34,7 +34,7 @@ from gym_pybullet_drones.envs.VisionAviary import VisionAviary
 
 from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
 from gym_pybullet_drones.control.SimplePIDControl import SimplePIDControl
-# from gym_pybullet_drones.control.MPCControl import MPCControl
+from gym_pybullet_drones.control.MPCControl import MPCControl
 from gym_pybullet_drones.control.ModulationXYControl import ModulationXYControl
 from gym_pybullet_drones.control.CBFXYControl import CBFXYControl
 
@@ -67,6 +67,7 @@ DEFAULT_DEST_POS = [1, 1, 1]
         CBF2D - CBFXYControl()
 """
 PID = 'pid'
+MPC = 'mpc'
 MOD2D = 'modulationXY'
 CBF2D = 'cbfXY'
 DEFAULT_CONTROL = PID
@@ -143,10 +144,12 @@ def run_fly_task_single(
     #### Initialize the controller #############################
     if control == 'pid':
         ctrl = DSLPIDControl(drone_model=drone)
+    elif control == 'mpc':
+        ctrl = MPCControl(drone_model=drone)
     elif control == 'modulationXY':
         ctrl = ModulationXYControl(drone_model=drone, env=env)
     elif control == 'cbfXY':
-        ctrl = CBFXYControl(drone_model=drone)
+        ctrl = CBFXYControl(drone_model=drone, env=env)
 
     #### Drone Desired Trajectory ##############################
     TAKEOFF_PERIOD = 8
