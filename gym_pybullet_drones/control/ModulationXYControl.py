@@ -271,8 +271,6 @@ class ModulationXYControl(DSLPIDControl):
             (3,1)-shaped array of floats containing the current velocity.
         cur_ang_vel : ndarray
             (3,1)-shaped array of floats containing the current angular velocity.
-        dy_obst: ndarry
-            (3, 4)-shaped arrary that store the states of the dynamics obstacles.
         target_pos : ndarray
             (3,1)-shaped array of floats containing the desired position.
         target_rpy : ndarray, optional
