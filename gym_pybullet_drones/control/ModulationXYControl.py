@@ -3,7 +3,9 @@ Figueroa Robotics Lab
 -c;--------------------------------------------------------------------"""
 import math
 import numpy as np
+import pandas as pd
 import pybullet as p
+import csv
 
 from gym_pybullet_drones.utils.enums import DroneModel
 from gym_pybullet_drones.envs.FLabCtrlAviary import FLabCtrlAviary
@@ -12,6 +14,8 @@ from gym_pybullet_drones.control.BaseControl import BaseControl
 from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
 
 from gym_pybullet_drones.control.dynamic_obstacle_avoidance.avoidance.modulation_3 import obs_avoidance_interpolation_moving
+
+DY_OBST = False
 
 DEBUGGING = True
 DEBUGGING1 = False
@@ -267,6 +271,8 @@ class ModulationXYControl(DSLPIDControl):
             (3,1)-shaped array of floats containing the current velocity.
         cur_ang_vel : ndarray
             (3,1)-shaped array of floats containing the current angular velocity.
+        dy_obst: ndarry
+            (3, 4)-shaped arrary that store the states of the dynamics obstacles.
         target_pos : ndarray
             (3,1)-shaped array of floats containing the desired position.
         target_rpy : ndarray, optional
@@ -298,24 +304,31 @@ class ModulationXYControl(DSLPIDControl):
         self.control_counter += 1
 
         # TODO: Create dynamics obstacles and update lab environment
-        d_obstacles = self.env.obstacles_list
-        self.d_obst_num = len(d_obstacles)
+        s_obst = self.env.obstacles_list
+        self.d_obst_num = len(s_obst)
         
         # Debugging
         if DEBUGGING1: 
-            print(f"d_obstacles = {d_obstacles}")
+            print(f"s_obst = {s_obst}")
             print(f"d_obst_num = {self.d_obst_num}")
 
         obst_pos = []
         obst_orit = []
         for i in range(self.d_obst_num):
-            obst_pos.append(np.array(d_obstacles[i][0]))
-            obst_orit.append(np.array(d_obstacles[i][1]))
+            obst_pos.append(np.array(s_obst[i][0]))
+            obst_orit.append(np.array(s_obst[i][1]))
 
         obst_pos = np.array(obst_pos)
         obst_orit = np.array(obst_orit)
         obst_vel = np.zeros((self.d_obst_num, 3))
         obst_ang_vel = np.zeros(self.d_obst_num)
+
+        if DY_OBST:
+            for i in range(dy_obst.shape[0]):
+                obst_pos.append(np.array(dy_obst[i][0]))
+                obst_orit.append(np.array(p.getQuaternionFromEuler(dy_obst[i][1])))  
+                obst_vel.append(np.array(dy_obst[i][2]))
+                obst_ang_vel.append(np.array(dy_obst[i][3][2]))
 
         if DEBUGGING1: 
             print(f"obst_pos = {obst_pos}")

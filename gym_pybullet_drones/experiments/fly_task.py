@@ -140,6 +140,9 @@ def run_fly_task_single(
                     output_folder=output_folder,
                     colab=colab
                     )
+    
+    #### Import the dynamic obstacles ##########################
+    dy_obst_state = np.load('dynamic_obstacles/dy_obst_state.npy')
 
     #### Initialize the controller #############################
     if control == 'pid':

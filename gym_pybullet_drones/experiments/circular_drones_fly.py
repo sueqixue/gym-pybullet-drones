@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 
 from gym_pybullet_drones.utils.enums import DroneModel, Physics
 from gym_pybullet_drones.envs.CtrlAviary import CtrlAviary
+from gym_pybullet_drones.envs.FLabCtrlAviary import FLabCtrlAviary
 from gym_pybullet_drones.envs.VisionAviary import VisionAviary
 from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
 from gym_pybullet_drones.control.SimplePIDControl import SimplePIDControl
@@ -119,7 +120,7 @@ def run(
                            obstacles=obstacles
                            )
     else: 
-        env = CtrlAviary(drone_model=drone,
+        env = FLabCtrlAviary(drone_model=drone,
                          num_drones=num_drones,
                          initial_xyzs=INIT_XYZS,
                          initial_rpys=INIT_RPYS,

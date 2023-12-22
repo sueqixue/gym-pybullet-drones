@@ -377,19 +377,19 @@ class CBFXYControl(DSLPIDControl):
         self.control_counter += 1
 
         # TODO: Create dynamics obstacles and update lab environment
-        d_obstacles = self.env.obstacles_list
-        self.d_obst_num = len(d_obstacles)
+        s_obst = self.env.obstacles_list
+        self.d_obst_num = len(s_obst)
         
         # Debugging
         if DEBUGGING1: 
-            print(f"d_obstacles = {d_obstacles}")
+            print(f"s_obst = {s_obst}")
             print(f"d_obst_num = {self.d_obst_num}")
 
         obst_pos = []
         obst_orit = []
         for i in range(self.d_obst_num):
-            obst_pos.append(np.array(d_obstacles[i][0]))
-            obst_orit.append(np.array(d_obstacles[i][1]))
+            obst_pos.append(np.array(s_obst[i][0]))
+            obst_orit.append(np.array(s_obst[i][1]))
 
         obst_pos = np.array(obst_pos)
         obst_orit = np.array(obst_orit)
