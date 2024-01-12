@@ -142,7 +142,16 @@ def run_fly_task_single(
                     )
     
     #### Import the dynamic obstacles ##########################
+    # save np.load
+    np_load_old = np.load
+
+    # modify the default parameters of np.load
+    np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
+
     dy_obst_state = np.load('dynamic_obstacles/dy_obst_state.npy')
+
+    # restore np.load for future normal usage
+    np.load = np_load_old
 
     #### Initialize the controller #############################
     if control == 'pid':
@@ -258,10 +267,13 @@ def run_fly_task_single(
         #### Compute control at the desired frequency ##############
         if i%CTRL_EVERY_N_STEPS == 0:
 
+            dy_obst=dy_obst_state[wp_counter]
+            print(dy_obst)
+
             #### Compute control for the current way point #############
             action["0"], _, _ = ctrl.computeControlFromState(control_timestep=CTRL_EVERY_N_STEPS*env.TIMESTEP,
                                                             state=obs["0"]["state"],
-                                                            target_pos=TARGET_POS[wp_counter, :],
+                                                            target_pos=TARGET_POS[wp_counter, :]
                                                             )
 
             #### Go to the next way point and loop #####################
