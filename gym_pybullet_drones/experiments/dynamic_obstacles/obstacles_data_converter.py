@@ -39,6 +39,8 @@ def obst_state_convert(obst_num):
                 obst_i[:, 3] = ang_vel[:,]
 
                 obst[:, i] = obst_i
+        
+        return obst
 
 
 def get_dy_obst_states(obst_num):
@@ -46,11 +48,11 @@ def get_dy_obst_states(obst_num):
         convert('data/x1.csv', 'data/y1.csv', 'data/z1.csv', 'obst_pos_1.csv')
         convert('data/x2.csv', 'data/y2.csv', 'data/z2.csv', 'obst_pos_2.csv')
 
-        convert('data/r0.csv', 'data/p0.csv', 'data/y0.csv', 'obst_pos_0.csv')
+        convert('data/r0.csv', 'data/p0.csv', 'data/y0.csv', 'obst_orit_0.csv')
         convert('data/r1.csv', 'data/p1.csv', 'data/y1.csv', 'obst_orit_1.csv')
         convert('data/r2.csv', 'data/p2.csv', 'data/y2.csv', 'obst_orit_2.csv')
 
-        convert('data/vx0.csv', 'data/vy0.csv', 'data/vz0.csv', 'obst_pos_0.csv')
+        convert('data/vx0.csv', 'data/vy0.csv', 'data/vz0.csv', 'obst_vel_0.csv')
         convert('data/vx1.csv', 'data/vy1.csv', 'data/vz1.csv', 'obst_vel_1.csv')
         convert('data/vx2.csv', 'data/vy2.csv', 'data/vz2.csv', 'obst_vel_2.csv')
 
@@ -64,4 +66,4 @@ def get_dy_obst_states(obst_num):
 
 obst_num = 3
 dy_obst_state = get_dy_obst_states(obst_num)
-np.save('dy_obst_state', dy_obst_state)
+np.save('dy_obst_state.npy', dy_obst_state)

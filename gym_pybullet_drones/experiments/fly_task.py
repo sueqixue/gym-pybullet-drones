@@ -142,16 +142,17 @@ def run_fly_task_single(
                     )
     
     #### Import the dynamic obstacles ##########################
-    # save np.load
-    np_load_old = np.load
+    # # save np.load
+    # np_load_old = np.load
 
-    # modify the default parameters of np.load
-    np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
+    # # modify the default parameters of np.load
+    # np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
 
-    dy_obst_state = np.load('dynamic_obstacles/dy_obst_state.npy')
+    # dy_obst_state = np.load('dynamic_obstacles/dy_obst_state.npy')
 
-    # restore np.load for future normal usage
-    np.load = np_load_old
+    # # restore np.load for future normal usage
+    # np.load = np_load_old
+    dy_obst_state = np.load('dy_obst_state.npy', allow_pickle=True)
 
     #### Initialize the controller #############################
     if control == 'pid':
