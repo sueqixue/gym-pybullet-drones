@@ -79,7 +79,7 @@ class DSLPIDControl(BaseControl):
                        target_rpy=np.zeros(3),
                        target_vel=np.zeros(3),
                        target_rpy_rates=np.zeros(3),
-                       dy_obst=np.zeros((4, 3))
+                       dy_obst=np.zeros((3, 4, 3))
                        ):
         """Computes the PID control action (as RPMs) for a single drone.
 
@@ -107,7 +107,7 @@ class DSLPIDControl(BaseControl):
         target_rpy_rates : ndarray, optional
             (3,1)-shaped array of floats containing the desired roll, pitch, and yaw rates.
         dy_obst: ndarray, optional
-            (4, 3)-shaped array of floats containing pos, orit, vel, ang_vel of dynamic obstacles.
+            (3, 4, 3)-shaped array of floats containing pos, orit, vel, ang_vel of dynamic obstacles.
 
         Returns
         -------

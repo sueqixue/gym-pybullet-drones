@@ -254,7 +254,7 @@ class ModulationXYControl(DSLPIDControl):
                        target_rpy=np.zeros(3),
                        target_vel=np.zeros(3),
                        target_rpy_rates=np.zeros(3),
-                       dy_obst=np.zeros((4, 3))
+                       dy_obst=np.zeros((3, 4, 3))
                        ):
         """Abstract method to compute the control action for a single drone.
 
@@ -281,7 +281,8 @@ class ModulationXYControl(DSLPIDControl):
         target_rpy_rates : ndarray, optional
             (3,1)-shaped array of floats containing the desired roll, pitch, and yaw rates.
         dy_obst: ndarray, optional
-            (4, 3)-shaped array of floats containing pos, orit, vel, ang_vel of dynamic obstacles.
+            (3, 4, 3)-shaped array of floats containing pos, orit, vel, ang_vel of dynamic obstacles.
+            3 dy_obst for testing, each info stored in (4, 3) ndarray.
 
         Returns
         -------
@@ -325,11 +326,12 @@ class ModulationXYControl(DSLPIDControl):
         obst_ang_vel = np.zeros(self.d_obst_num)
 
         if DY_OBST:
+            self.d_obst_num += dy_obst.shape[0]
             for i in range(dy_obst.shape[0]):
-                obst_pos.append(np.array(dy_obst[i][0]))
-                obst_orit.append(np.array(p.getQuaternionFromEuler(dy_obst[i][1])))  
-                obst_vel.append(np.array(dy_obst[i][2]))
-                obst_ang_vel.append(np.array(dy_obst[i][3][2]))
+                obst_pos = np.append(obst_pos, dy_obst[i][0].reshape(1, 3), axis=0)
+                obst_orit = np.append(obst_orit, p.getQuaternionFromEuler(dy_obst[i][1]).reshape(1, 3), axis=0)
+                obst_vel = np.append(obst_vel, dy_obst[i][2].reshape(1, 3), axis=0)
+                obst_ang_vel = np.append(obst_ang_vel, dy_obst[i][3][2].reshape(1), axis=0)
 
         if DEBUGGING1: 
             print(f"obst_pos = {obst_pos}")
